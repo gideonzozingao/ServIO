@@ -1,0 +1,437 @@
+enum TableStatus {
+  FREE
+  OCCUPIED
+  RESERVED
+}
+
+enum OrderType {
+  DINE_IN
+  TAKEAWAY
+}
+
+enum OrderStatus {
+  OPEN
+  SENT_TO_KITCHEN
+  PREPARING
+  READY
+  SERVED
+  BILLED
+  PAID
+  CANCELLED
+  VOIDED
+}
+
+enum ItemStatus {
+  PENDING
+  PREPARING
+  READY
+  SERVED
+  VOIDED
+}
+
+enum TicketStatus {
+  NEW
+  PREPARING
+  READY
+  SERVED
+  CANCELLED
+}
+
+enum BillStatus {
+  OPEN
+  PAID
+  VOID
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  MOBILE_MONEY
+  OTHER
+}
+
+enum CounterScope {
+  ORDER
+  BILL
+}
+
+// ── Tenant profile ───────────────────────────────────────────────────────────
+
+/// id = organization.id (Better Auth). Created in the organization afterCreate hook.
+model Restaurant {
+  id               String   @id
+  currency         String   @default("PGK") @db.VarChar(3)
+  taxRateBps       Int      @default(1000) @map("tax_rate_bps") // 1000 = 10.00% (confirm GST rate)
+  pricesIncludeTax Boolean  @default(true) @map("prices_include_tax") // open question: inclusive vs exclusive
+  timezone         String   @default("Pacific/Port_Moresby")
+  settings         Json     @default("{}")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  stations        Station[]
+  tables          DiningTable[]
+  categories      Category[]
+  menuItems       MenuItem[]
+  modifierGroups  ModifierGroup[]
+  modifiers       Modifier[]
+  orders          Order[]
+  orderItems      OrderItem[]
+  orderItemMods   OrderItemModifier[]
+  tickets         KitchenTicket[]
+  bills           Bill[]
+  payments        Payment[]
+  idempotencyKeys IdempotencyKey[]
+  auditLogs       AuditLog[]
+  counters        DocumentCounter[]
+  dailySummaries  DailySalesSummary[]
+
+  @@map("restaurants")
+}
+
+// ── Floor and kitchen setup ──────────────────────────────────────────────────
+
+model Station {
+  id           String   @id @default(uuid())
+  restaurantId String   @map("restaurant_id")
+  name         String // grill, bar, fry, cold ...
+  sortOrder    Int      @default(0) @map("sort_order")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  restaurant Restaurant      @relation(fields: [restaurantId], references: [id])
+  menuItems  MenuItem[]
+  tickets    KitchenTicket[]
+
+  @@unique([restaurantId, name])
+  @@map("stations")
+}
+
+model DiningTable {
+  id           String      @id @default(uuid())
+  restaurantId String      @map("restaurant_id")
+  label        String
+  section      String?
+  seats        Int         @default(2)
+  status       TableStatus @default(FREE)
+  active       Boolean     @default(true)
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  orders     Order[]
+
+  @@unique([restaurantId, label])
+  @@index([restaurantId, status])
+  @@map("tables")
+}
+
+// ── Catalog ──────────────────────────────────────────────────────────────────
+
+model Category {
+  id           String   @id @default(uuid())
+  restaurantId String   @map("restaurant_id")
+  name         String
+  sortOrder    Int      @default(0) @map("sort_order")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  items      MenuItem[]
+
+  @@unique([restaurantId, name])
+  @@map("categories")
+}
+
+model MenuItem {
+  id           String    @id @default(uuid())
+  restaurantId String    @map("restaurant_id")
+  categoryId   String    @map("category_id")
+  stationId    String    @map("station_id") // default kitchen routing
+  name         String
+  description  String?
+  priceMinor   Int       @map("price_minor")
+  available    Boolean   @default(true) // "86'd" toggle, changes during service
+  imagePath    String?   @map("image_path")
+  sortOrder    Int       @default(0) @map("sort_order")
+  archivedAt   DateTime? @map("archived_at") @db.Timestamptz // soft delete; order history keeps snapshots
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  restaurant     Restaurant      @relation(fields: [restaurantId], references: [id])
+  category       Category        @relation(fields: [categoryId], references: [id])
+  station        Station         @relation(fields: [stationId], references: [id])
+  modifierGroups ModifierGroup[]
+  orderItems     OrderItem[]
+
+  @@index([restaurantId, categoryId, sortOrder])
+  @@map("menu_items")
+}
+
+model ModifierGroup {
+  id           String @id @default(uuid())
+  restaurantId String @map("restaurant_id")
+  menuItemId   String @map("menu_item_id")
+  name         String
+  minSelect    Int    @default(0) @map("min_select")
+  maxSelect    Int    @default(1) @map("max_select")
+  sortOrder    Int    @default(0) @map("sort_order")
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  menuItem   MenuItem   @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  modifiers  Modifier[]
+
+  @@index([menuItemId])
+  @@map("modifier_groups")
+}
+
+model Modifier {
+  id              String  @id @default(uuid())
+  restaurantId    String  @map("restaurant_id")
+  groupId         String  @map("group_id")
+  name            String
+  priceDeltaMinor Int     @default(0) @map("price_delta_minor")
+  available       Boolean @default(true)
+  sortOrder       Int     @default(0) @map("sort_order")
+
+  restaurant Restaurant    @relation(fields: [restaurantId], references: [id])
+  group      ModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId])
+  @@map("modifiers")
+}
+
+// ── Orders ───────────────────────────────────────────────────────────────────
+
+model Order {
+  id           String      @id @default(uuid()) // client-generatable (offline)
+  restaurantId String      @map("restaurant_id")
+  number       Int // human-friendly, per restaurant per business day (DocumentCounter)
+  businessDate DateTime    @map("business_date") @db.Date
+  tableId      String?     @map("table_id")
+  type         OrderType
+  status       OrderStatus @default(OPEN)
+  waiterId     String      @map("waiter_id") // soft ref → user.id
+  covers       Int? // guests
+  customerNote String?     @map("customer_note")
+
+  subtotalMinor Int @default(0) @map("subtotal_minor")
+  taxMinor      Int @default(0) @map("tax_minor")
+  discountMinor Int @default(0) @map("discount_minor")
+  totalMinor    Int @default(0) @map("total_minor")
+
+  voidReason String?   @map("void_reason")
+  voidedById String?   @map("voided_by_id") // soft ref → user.id
+  openedAt   DateTime  @default(now()) @map("opened_at") @db.Timestamptz
+  sentAt     DateTime? @map("sent_at") @db.Timestamptz
+  closedAt   DateTime? @map("closed_at") @db.Timestamptz
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  restaurant Restaurant      @relation(fields: [restaurantId], references: [id])
+  table      DiningTable?    @relation(fields: [tableId], references: [id])
+  items      OrderItem[]
+  tickets    KitchenTicket[]
+  bills      Bill[]
+
+  @@unique([restaurantId, businessDate, number])
+  @@index([restaurantId, status, openedAt])
+  @@index([restaurantId, waiterId, openedAt])
+  @@index([tableId, status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id             String     @id @default(uuid())
+  restaurantId   String     @map("restaurant_id")
+  orderId        String     @map("order_id")
+  menuItemId     String     @map("menu_item_id")
+  ticketId       String?    @map("ticket_id") // set when the order is sent
+  nameSnapshot   String     @map("name_snapshot")
+  unitPriceMinor Int        @map("unit_price_minor") // snapshot at add time
+  qty            Int        @default(1)
+  lineTotalMinor Int        @default(0) @map("line_total_minor") // (unit + modifiers) * qty
+  notes          String?
+  status         ItemStatus @default(PENDING)
+  voidedAt       DateTime?  @map("voided_at") @db.Timestamptz
+  voidedById     String?    @map("voided_by_id") // soft ref → user.id
+  voidReason     String?    @map("void_reason")
+  createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz
+
+  restaurant Restaurant          @relation(fields: [restaurantId], references: [id])
+  order      Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem   MenuItem            @relation(fields: [menuItemId], references: [id])
+  ticket     KitchenTicket?      @relation(fields: [ticketId], references: [id])
+  modifiers  OrderItemModifier[]
+
+  @@index([orderId])
+  @@index([ticketId])
+  @@index([restaurantId, status])
+  @@map("order_items")
+}
+
+model OrderItemModifier {
+  id              String  @id @default(uuid())
+  restaurantId    String  @map("restaurant_id")
+  orderItemId     String  @map("order_item_id")
+  modifierId      String? @map("modifier_id") // informational; snapshot is authoritative
+  nameSnapshot    String  @map("name_snapshot")
+  priceDeltaMinor Int     @default(0) @map("price_delta_minor")
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  orderItem  OrderItem  @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  @@index([orderItemId])
+  @@map("order_item_modifiers")
+}
+
+// ── Kitchen ──────────────────────────────────────────────────────────────────
+
+/// One ticket per (order, station, fire round). Items added after the first send
+/// create a new round, so the kitchen sees only the new items.
+model KitchenTicket {
+  id           String       @id @default(uuid())
+  restaurantId String       @map("restaurant_id")
+  orderId      String       @map("order_id")
+  stationId    String       @map("station_id")
+  round        Int          @default(1)
+  status       TicketStatus @default(NEW)
+  firedAt      DateTime     @default(now()) @map("fired_at") @db.Timestamptz
+  startedAt    DateTime?    @map("started_at") @db.Timestamptz
+  readyAt      DateTime?    @map("ready_at") @db.Timestamptz
+  servedAt     DateTime?    @map("served_at") @db.Timestamptz
+
+  restaurant Restaurant  @relation(fields: [restaurantId], references: [id])
+  order      Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  station    Station     @relation(fields: [stationId], references: [id])
+  items      OrderItem[]
+
+  @@unique([orderId, stationId, round])
+  @@index([restaurantId, stationId, status])
+  @@map("kitchen_tickets")
+}
+
+// ── Billing ──────────────────────────────────────────────────────────────────
+
+model Bill {
+  id           String     @id @default(uuid())
+  restaurantId String     @map("restaurant_id")
+  orderId      String     @map("order_id")
+  number       Int // per restaurant per business day (DocumentCounter)
+  businessDate DateTime   @map("business_date") @db.Date
+  status       BillStatus @default(OPEN)
+
+  subtotalMinor        Int     @default(0) @map("subtotal_minor")
+  taxMinor             Int     @default(0) @map("tax_minor")
+  discountMinor        Int     @default(0) @map("discount_minor")
+  totalMinor           Int     @default(0) @map("total_minor")
+  discountReason       String? @map("discount_reason")
+  discountApprovedById String? @map("discount_approved_by_id") // soft ref → user.id
+
+  createdById String    @map("created_by_id") // soft ref → user.id
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  paidAt      DateTime? @map("paid_at") @db.Timestamptz
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  order      Order      @relation(fields: [orderId], references: [id])
+  payments   Payment[]
+
+  @@unique([restaurantId, businessDate, number])
+  @@index([orderId])
+  @@index([restaurantId, status, createdAt])
+  @@map("bills")
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  restaurantId  String        @map("restaurant_id")
+  billId        String        @map("bill_id")
+  method        PaymentMethod
+  amountMinor   Int           @map("amount_minor") // amount applied to the bill
+  tenderedMinor Int?          @map("tendered_minor") // cash handed over (change = tendered - amount)
+  reference     String? // card slip / mobile money txn id
+  receivedById  String        @map("received_by_id") // soft ref → user.id
+  paidAt        DateTime      @default(now()) @map("paid_at") @db.Timestamptz
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  bill       Bill       @relation(fields: [billId], references: [id])
+
+  @@index([billId])
+  @@index([restaurantId, paidAt])
+  @@map("payments")
+}
+
+// ── Cross-cutting ────────────────────────────────────────────────────────────
+
+model IdempotencyKey {
+  id             String   @id @default(uuid())
+  restaurantId   String   @map("restaurant_id")
+  key            String
+  scope          String // e.g. "POST /api/v1/orders"
+  requestHash    String   @map("request_hash")
+  responseStatus Int      @map("response_status")
+  responseBody   Json     @map("response_body")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  expiresAt      DateTime @map("expires_at") @db.Timestamptz
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+
+  @@unique([restaurantId, key, scope])
+  @@index([expiresAt])
+  @@map("idempotency_keys")
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  restaurantId String   @map("restaurant_id")
+  userId       String?  @map("user_id") // soft ref → user.id
+  approverId   String?  @map("approver_id") // soft ref → user.id
+  deviceId     String?  @map("device_id") // soft ref → device.id
+  action       String // order.void, bill.discount, menu.price_change ...
+  subjectType  String   @map("subject_type")
+  subjectId    String?  @map("subject_id")
+  before       Json?
+  after        Json?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+
+  @@index([restaurantId, createdAt])
+  @@index([subjectType, subjectId])
+  @@map("audit_logs")
+}
+
+/// Atomic per-day sequence for order and bill numbers.
+/// Increment with a single statement:
+///   INSERT ... ON CONFLICT (restaurant_id, scope, business_date)
+///   DO UPDATE SET last_value = document_counters.last_value + 1 RETURNING last_value
+model DocumentCounter {
+  restaurantId String       @map("restaurant_id")
+  scope        CounterScope
+  businessDate DateTime     @map("business_date") @db.Date
+  lastValue    Int          @default(0) @map("last_value")
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+
+  @@id([restaurantId, scope, businessDate])
+  @@map("document_counters")
+}
+
+// ── Reporting ────────────────────────────────────────────────────────────────
+
+model DailySalesSummary {
+  id            String   @id @default(uuid())
+  restaurantId  String   @map("restaurant_id")
+  businessDate  DateTime @map("business_date") @db.Date
+  ordersCount   Int      @default(0) @map("orders_count")
+  grossMinor    Int      @default(0) @map("gross_minor")
+  taxMinor      Int      @default(0) @map("tax_minor")
+  discountMinor Int      @default(0) @map("discount_minor")
+  netMinor      Int      @default(0) @map("net_minor")
+  voidsCount    Int      @default(0) @map("voids_count")
+  voidsMinor    Int      @default(0) @map("voids_minor")
+  byMethod      Json     @default("{}") @map("by_method") // { CASH: 12000, CARD: 8000, ... }
+  computedAt    DateTime @default(now()) @map("computed_at") @db.Timestamptz
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+
+  @@unique([restaurantId, businessDate])
+  @@map("daily_sales_summaries")
+}
