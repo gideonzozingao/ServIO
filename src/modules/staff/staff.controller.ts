@@ -1,6 +1,17 @@
 import { CurrentSession } from './../../common/decorators/current-session/current-session.decorator.js';
 import { RequirePermission } from './../../common/decorators/require-permission/require-permission.decorator.js';
-import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Put } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Put,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 // import { CurrentSession } from '../../common/decorators/current-session.decorator.js';
 
@@ -28,14 +39,21 @@ export class StaffController {
   @Patch(':userId')
   @RequirePermission('staff', 'manage')
   @HttpCode(204)
-  update(@CurrentSession() s: RequestSession, @Param('userId', ParseUUIDPipe) userId: string, @Body() dto: UpdateStaffDto) {
+  update(
+    @CurrentSession() s: RequestSession,
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Body() dto: UpdateStaffDto,
+  ) {
     return this.staff.update(s, userId, dto);
   }
 
   @Delete(':userId')
   @RequirePermission('staff', 'manage')
   @HttpCode(204)
-  deactivate(@CurrentSession() s: RequestSession, @Param('userId', ParseUUIDPipe) userId: string) {
+  deactivate(
+    @CurrentSession() s: RequestSession,
+    @Param('userId', ParseUUIDPipe) userId: string,
+  ) {
     return this.staff.deactivate(s, userId);
   }
 
@@ -43,7 +61,11 @@ export class StaffController {
   @Put(':userId/pin')
   @RequirePermission('report', 'read')
   @HttpCode(204)
-  setPin(@CurrentSession() s: RequestSession, @Param('userId', ParseUUIDPipe) userId: string, @Body() dto: SetPinDto) {
+  setPin(
+    @CurrentSession() s: RequestSession,
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Body() dto: SetPinDto,
+  ) {
     return this.staff.setPin(s, userId, dto.pin);
   }
 }

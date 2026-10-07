@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import type { AppConfig } from '../config/configuration.js';
@@ -25,11 +30,22 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     const { databaseUrl, isProd } = config.getOrThrow<AppConfig>('app');
     this.base = new PrismaClient({
       adapter: new PrismaPg({ connectionString: databaseUrl }),
-      log: isProd ? [{ emit: 'event', level: 'warn' }] : [{ emit: 'event', level: 'query' }, { emit: 'event', level: 'warn' }],
+      log: isProd
+        ? [{ emit: 'event', level: 'warn' }]
+        : [
+            { emit: 'event', level: 'query' },
+            { emit: 'event', level: 'warn' },
+          ],
     });
-    (this.base as any).$on('query', (e: { duration: number; query: string }) => {
-      if (e.duration > 200) this.logger.warn(`slow query ${e.duration}ms: ${e.query.slice(0, 300)}`);
-    });
+    (this.base as any).$on(
+      'query',
+      (e: { duration: number; query: string }) => {
+        if (e.duration > 200)
+          this.logger.warn(
+            `slow query ${e.duration}ms: ${e.query.slice(0, 300)}`,
+          );
+      },
+    );
     this.app = buildAppClient(this.base);
   }
 

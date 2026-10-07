@@ -8,7 +8,10 @@ import { TenantJobRunner } from '../tenant-job.runner.js';
 export class CleanupProcessor extends WorkerHost {
   private readonly logger = new Logger(CleanupProcessor.name);
 
-  constructor(private readonly runner: TenantJobRunner, private readonly auth: AuthService) {
+  constructor(
+    private readonly runner: TenantJobRunner,
+    private readonly auth: AuthService,
+  ) {
     super();
   }
 
@@ -16,11 +19,17 @@ export class CleanupProcessor extends WorkerHost {
     let keys = 0;
     await this.runner.forEach((restaurantId) =>
       this.runner.run(restaurantId, async (tx) => {
-        keys += (await tx.idempotencyKey.deleteMany({ where: { expiresAt: { lt: new Date() } } })).count;
+        keys += (
+          await tx.idempotencyKey.deleteMany({
+            where: { expiresAt: { lt: new Date() } },
+          })
+        ).count;
       }),
     );
     const auth = await this.auth.cleanupExpired();
-    this.logger.log(`cleanup: ${keys} idempotency keys, ${auth.sessions} sessions, ${auth.approvals} approvals`);
+    this.logger.log(
+      `cleanup: ${keys} idempotency keys, ${auth.sessions} sessions, ${auth.approvals} approvals`,
+    );
     return { idempotencyKeys: keys, ...auth };
   }
 }

@@ -1,7 +1,7 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { SecondaryStorage } from 'better-auth';
-import {Redis} from 'ioredis';
+import { Redis } from 'ioredis';
 import type { AppConfig } from '../../config/configuration.js';
 
 @Injectable()
@@ -9,7 +9,10 @@ export class RedisService implements OnModuleDestroy {
   readonly client: Redis;
 
   constructor(config: ConfigService) {
-    this.client = new Redis(config.getOrThrow<AppConfig>('app').redisUrl, { maxRetriesPerRequest: 3, lazyConnect: false });
+    this.client = new Redis(config.getOrThrow<AppConfig>('app').redisUrl, {
+      maxRetriesPerRequest: 3,
+      lazyConnect: false,
+    });
   }
 
   async getJson<T>(key: string): Promise<T | null> {
@@ -17,7 +20,11 @@ export class RedisService implements OnModuleDestroy {
     return raw ? (JSON.parse(raw) as T) : null;
   }
 
-  async setJson(key: string, value: unknown, ttlSeconds: number): Promise<void> {
+  async setJson(
+    key: string,
+    value: unknown,
+    ttlSeconds: number,
+  ): Promise<void> {
     await this.client.set(key, JSON.stringify(value), 'EX', ttlSeconds);
   }
 
@@ -29,7 +36,13 @@ export class RedisService implements OnModuleDestroy {
   async delByPrefix(prefix: string): Promise<void> {
     let cursor = '0';
     do {
-      const [next, keys] = await this.client.scan(cursor, 'MATCH', `${prefix}*`, 'COUNT', 200);
+      const [next, keys] = await this.client.scan(
+        cursor,
+        'MATCH',
+        `${prefix}*`,
+        'COUNT',
+        200,
+      );
       cursor = next;
       if (keys.length) await this.client.del(...keys);
     } while (cursor !== '0');
@@ -48,7 +61,9 @@ export class RedisService implements OnModuleDestroy {
       getAndDelete: (key) => r.getdel(k(key)),
       increment: async (key, ttl) => {
         // TTL applies on creation only (fixed window), as Better Auth expects.
-        const [[, value]] = (await r.multi().incr(k(key)).exec()) as [[Error | null, number]];
+        const [[, value]] = (await r.multi().incr(k(key)).exec()) as [
+          [Error | null, number],
+        ];
         if (value === 1) await r.expire(k(key), ttl);
         return value;
       },

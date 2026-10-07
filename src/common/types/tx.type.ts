@@ -4,9 +4,16 @@ import type { Prisma } from '../../database/prisma-client.js';
 export type TenantTx = Prisma.TransactionClient;
 
 export type StaffRole = 'owner' | 'manager' | 'waiter' | 'kitchen' | 'cashier';
-export const STAFF_ROLES: StaffRole[] = ['owner', 'manager', 'waiter', 'kitchen', 'cashier'];
+export const STAFF_ROLES: StaffRole[] = [
+  'owner',
+  'manager',
+  'waiter',
+  'kitchen',
+  'cashier',
+];
 export const FLOOR_ROLES: StaffRole[] = ['waiter', 'kitchen', 'cashier'];
-export const isStaffRole = (r: string): r is StaffRole => (STAFF_ROLES as string[]).includes(r);
+export const isStaffRole = (r: string): r is StaffRole =>
+  (STAFF_ROLES as string[]).includes(r);
 
 export interface RequestSession {
   sessionId: string;

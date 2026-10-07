@@ -1,4 +1,9 @@
-import { createParamDecorator, ExecutionContext, SetMetadata, UnauthorizedException } from '@nestjs/common';
+import {
+  createParamDecorator,
+  ExecutionContext,
+  SetMetadata,
+  UnauthorizedException,
+} from '@nestjs/common';
 
 export const SESSION_ONLY = 'servio:session-only';
 
@@ -17,8 +22,10 @@ export interface SessionUser {
   activeRestaurantId: string | null;
 }
 
-export const CurrentUser = createParamDecorator((_: unknown, ctx: ExecutionContext): SessionUser => {
-  const req = ctx.switchToHttp().getRequest();
-  if (!req.servioUser) throw new UnauthorizedException();
-  return req.servioUser as SessionUser;
-});
+export const CurrentUser = createParamDecorator(
+  (_: unknown, ctx: ExecutionContext): SessionUser => {
+    const req = ctx.switchToHttp().getRequest();
+    if (!req.servioUser) throw new UnauthorizedException();
+    return req.servioUser as SessionUser;
+  },
+);

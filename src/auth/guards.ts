@@ -54,7 +54,8 @@ export class TenantGuard extends SessionGuard {
       },
       select: { role: true },
     });
-    if (!member) throw new ForbiddenException('Not a member of this restaurant');
+    if (!member)
+      throw new ForbiddenException('Not a member of this restaurant');
 
     const held = member.role.split(',').map((r: string) => r.trim());
     const required = this.reflector.getAllAndOverride<StaffRole[] | undefined>(

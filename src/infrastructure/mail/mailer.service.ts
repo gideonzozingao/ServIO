@@ -15,12 +15,15 @@ export interface MailTransport {
 export class LogMailTransport implements MailTransport {
   private readonly logger = new Logger('Mailer');
   async send(m: MailMessage) {
-    this.logger.warn(`[${m.kind}] to=${m.to} subject="${m.subject}"${m.link ? ` link=${m.link}` : ''}`);
+    this.logger.warn(
+      `[${m.kind}] to=${m.to} subject="${m.subject}"${m.link ? ` link=${m.link}` : ''}`,
+    );
   }
 }
 
 const OUTBOX_TTL = 3600;
-export const devOutboxKey = (email: string) => `dev:outbox:${email.toLowerCase()}`;
+export const devOutboxKey = (email: string) =>
+  `dev:outbox:${email.toLowerCase()}`;
 
 @Injectable()
 export class MailerService {
@@ -40,12 +43,19 @@ export class MailerService {
     try {
       await this.transport.send(message);
     } catch (e) {
-      this.logger.error(`mail to ${message.to} failed: ${(e as Error).message}`);
+      this.logger.error(
+        `mail to ${message.to} failed: ${(e as Error).message}`,
+      );
     }
     // Dev/test outbox so e2e tests can follow verification/invitation links. Never in production.
     if (!this.isProd) {
       const key = devOutboxKey(message.to);
-      await this.redis.client.multi().lpush(key, JSON.stringify(message)).ltrim(key, 0, 19).expire(key, OUTBOX_TTL).exec();
+      await this.redis.client
+        .multi()
+        .lpush(key, JSON.stringify(message))
+        .ltrim(key, 0, 19)
+        .expire(key, OUTBOX_TTL)
+        .exec();
     }
   }
 }

@@ -12,7 +12,17 @@ import { OrdersService } from './orders.service.js';
 @Module({
   imports: [CatalogModule, FloorModule, SettingsModule, StaffModule],
   controllers: [OrdersController],
-  providers: [OrdersService, OrderPricingService, OrderQueryService, OrderStateMachine],
-  exports: [OrdersService, OrderPricingService, OrderQueryService, OrderStateMachine],
+  providers: [
+    OrdersService,
+    OrderPricingService,
+    OrderQueryService,
+    OrderStateMachine,
+  ],
+  exports: [
+    OrdersService,
+    OrderPricingService,
+    OrderQueryService,
+    OrderStateMachine,
+  ],
 })
 export class OrdersModule {}

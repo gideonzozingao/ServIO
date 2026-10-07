@@ -14,7 +14,10 @@ import { CurrentSession } from '../../common/decorators/current-session/current-
  */
 export function mountBetterAuth(app: INestApplication): void {
   const auth = app.get<AuthInstance>(BETTER_AUTH);
-  app.getHttpAdapter().getInstance().all('/api/auth/{*path}', toNodeHandler(auth));
+  app
+    .getHttpAdapter()
+    .getInstance()
+    .all('/api/auth/{*path}', toNodeHandler(auth));
 }
 
 @ApiTags('auth')
@@ -25,7 +28,16 @@ export class MeController {
   /** Session + role + flattened permissions for client UI gating. */
   @Get()
   async me(@CurrentSession() s: RequestSession) {
-    const user = await this.authPrisma.user.findUnique({ where: { id: s.userId }, select: { id: true, name: true, email: true, image: true } });
-    return { user, restaurantId: s.restaurantId, role: s.role, deviceId: s.deviceId, permissions: permissionsFor(s.role) };
+    const user = await this.authPrisma.user.findUnique({
+      where: { id: s.userId },
+      select: { id: true, name: true, email: true, image: true },
+    });
+    return {
+      user,
+      restaurantId: s.restaurantId,
+      role: s.role,
+      deviceId: s.deviceId,
+      permissions: permissionsFor(s.role),
+    };
   }
 }

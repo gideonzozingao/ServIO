@@ -38,7 +38,9 @@ export const CORE_IMPORTS = [
   EventEmitterModule.forRoot({ wildcard: false }),
   BullModule.forRootAsync({
     inject: [ConfigService],
-    useFactory: (c: ConfigService) => ({ connection: bullConnection(c.getOrThrow<AppConfig>('app').redisUrl) }),
+    useFactory: (c: ConfigService) => ({
+      connection: bullConnection(c.getOrThrow<AppConfig>('app').redisUrl),
+    }),
   }),
   DatabaseModule,
   RedisModule,

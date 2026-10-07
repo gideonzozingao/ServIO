@@ -13,7 +13,11 @@ import { RegistrationService } from './registration.service.js';
  */
 @Module({
   imports: [StaffModule],
-  controllers: [RegistrationController, InvitationsController, AccountController],
+  controllers: [
+    RegistrationController,
+    InvitationsController,
+    AccountController,
+  ],
   providers: [RegistrationService, InvitationsService, AccountService],
 })
 export class AccountsModule {}

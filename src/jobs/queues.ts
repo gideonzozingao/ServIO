@@ -12,7 +12,7 @@ export const JOBS = {
 
 export interface DailyRollupJob {
   restaurantId?: string; // omit → all restaurants
-  date?: string;         // YYYY-MM-DD; omit → previous business date per restaurant
+  date?: string; // YYYY-MM-DD; omit → previous business date per restaurant
 }
 
 export interface PushTicketReadyJob {

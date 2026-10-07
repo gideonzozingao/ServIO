@@ -4,7 +4,6 @@ import { ApiTags } from '@nestjs/swagger';
 import { TicketBoardQueryDto } from './dto/ticket.dto.js';
 import { TicketQueryService } from './ticket-query.service.js';
 
-
 /** Reads only. Status changes go through order-flow (PATCH /kitchen-tickets/:id) because they roll up to the order. */
 @ApiTags('kitchen')
 @Controller('kitchen-tickets')

@@ -5,7 +5,10 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { bearer, organization } from 'better-auth/plugins';
 import type { PrismaClient } from '../../database/prisma-client.js';
 import { ac, roles } from './access-control.js';
-import { staffDevice, type StaffDeviceOptions } from './plugins/staff-device/staff-device.plugin.js';
+import {
+  staffDevice,
+  type StaffDeviceOptions,
+} from './plugins/staff-device/staff-device.plugin.js';
 
 export const BETTER_AUTH = Symbol('BETTER_AUTH');
 
@@ -68,7 +71,10 @@ export function createAuth(deps: AuthDeps) {
     advanced: {
       // Nginx must set `X-Real-IP $remote_addr` (overwrite, never pass the client's). Without a client IP,
       // Better Auth rate-limits everyone in one shared bucket (one attacker could block all PIN logins).
-      ipAddress: { ipAddressHeaders: ['x-real-ip', 'x-forwarded-for'], trustedProxies: deps.trustedProxies },
+      ipAddress: {
+        ipAddressHeaders: ['x-real-ip', 'x-forwarded-for'],
+        trustedProxies: deps.trustedProxies,
+      },
       // App-side UUIDs: with 'uuid', Better Auth defers to a gen_random_uuid() DB default that the
       // generated auth.prisma doesn't declare. A function works regardless of schema defaults.
       database: { generateId: () => randomUUID() },
@@ -83,10 +89,17 @@ export function createAuth(deps: AuthDeps) {
           // membership so owners/managers land in their restaurant (multi-branch later: set-active switches).
           // PIN sessions already carry activeOrganizationId from the device.
           before: async (session) => {
-            const s = session as typeof session & { activeOrganizationId?: string | null };
+            const s = session as typeof session & {
+              activeOrganizationId?: string | null;
+            };
             if (s.activeOrganizationId) return;
-            const m = await deps.prisma.member.findFirst({ where: { userId: s.userId }, orderBy: { createdAt: 'asc' }, select: { organizationId: true } });
-            if (m) return { data: { ...s, activeOrganizationId: m.organizationId } };
+            const m = await deps.prisma.member.findFirst({
+              where: { userId: s.userId },
+              orderBy: { createdAt: 'asc' },
+              select: { organizationId: true },
+            });
+            if (m)
+              return { data: { ...s, activeOrganizationId: m.organizationId } };
           },
         },
       },

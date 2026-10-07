@@ -18,17 +18,29 @@ class ProvisionModule {}
 async function main() {
   const { values } = parseArgs({
     options: {
-      name: { type: 'string' }, slug: { type: 'string' }, owner: { type: 'string' },
-      email: { type: 'string' }, password: { type: 'string' },
+      name: { type: 'string' },
+      slug: { type: 'string' },
+      owner: { type: 'string' },
+      email: { type: 'string' },
+      password: { type: 'string' },
     },
   });
   const { name, slug, owner, email, password } = values;
-  if (!name || !slug || !owner || !email || !password) throw new Error('Required: --name --slug --owner --email --password');
+  if (!name || !slug || !owner || !email || !password)
+    throw new Error('Required: --name --slug --owner --email --password');
 
-  const app = await NestFactory.createApplicationContext(ProvisionModule, { logger: ['error', 'warn'] });
+  const app = await NestFactory.createApplicationContext(ProvisionModule, {
+    logger: ['error', 'warn'],
+  });
   try {
     const result = await app.get(AuthService).provisionRestaurant(
-      { restaurantName: name, slug, ownerName: owner, ownerEmail: email, ownerPassword: password },
+      {
+        restaurantName: name,
+        slug,
+        ownerName: owner,
+        ownerEmail: email,
+        ownerPassword: password,
+      },
       createRestaurantForOrganization(app.get(PrismaService)),
     );
     console.log(JSON.stringify(result, null, 2));

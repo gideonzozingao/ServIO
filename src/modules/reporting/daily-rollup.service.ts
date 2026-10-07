@@ -4,13 +4,20 @@ import type { TenantTx } from '../../common/types/tx.type.js';
 import { isoToDbDate } from '../../common/utils/business-date.util.js';
 import { rid } from '../../database/tenant-scope.js';
 
-
 /** Idempotent per (restaurant, business date). Raw SQL is tagged (parameterised) and still under RLS. */
 @Injectable()
 export class DailyRollupService {
   async compute(tx: TenantTx, iso: string): Promise<DailyFigures> {
     const r = rid();
-    const [sales] = await tx.$queryRaw<{ orders: number; gross: bigint; discount: bigint; tax: bigint; total: bigint }[]>`
+    const [sales] = await tx.$queryRaw<
+      {
+        orders: number;
+        gross: bigint;
+        discount: bigint;
+        tax: bigint;
+        total: bigint;
+      }[]
+    >`
       SELECT count(*)::int AS orders,
              coalesce(sum(subtotal_minor), 0)::bigint AS gross,
              coalesce(sum(discount_minor), 0)::bigint AS discount,
@@ -42,18 +49,32 @@ export class DailyRollupService {
       totalMinor: total,
       voidsCount: voids.cnt,
       voidsMinor: Number(voids.amt),
-      byMethod: Object.fromEntries(methods.map((m) => [m.method, Number(m.amount)])),
+      byMethod: Object.fromEntries(
+        methods.map((m) => [m.method, Number(m.amount)]),
+      ),
     };
   }
 
   async persist(tx: TenantTx, iso: string): Promise<DailyFigures> {
     const f = await this.compute(tx, iso);
     const data = {
-      ordersCount: f.ordersCount, grossMinor: f.grossMinor, taxMinor: f.taxMinor, discountMinor: f.discountMinor,
-      netMinor: f.netMinor, voidsCount: f.voidsCount, voidsMinor: f.voidsMinor, byMethod: f.byMethod, computedAt: new Date(),
+      ordersCount: f.ordersCount,
+      grossMinor: f.grossMinor,
+      taxMinor: f.taxMinor,
+      discountMinor: f.discountMinor,
+      netMinor: f.netMinor,
+      voidsCount: f.voidsCount,
+      voidsMinor: f.voidsMinor,
+      byMethod: f.byMethod,
+      computedAt: new Date(),
     };
     await tx.dailySalesSummary.upsert({
-      where: { restaurantId_businessDate: { restaurantId: rid(), businessDate: isoToDbDate(iso) } },
+      where: {
+        restaurantId_businessDate: {
+          restaurantId: rid(),
+          businessDate: isoToDbDate(iso),
+        },
+      },
       create: { restaurantId: rid(), businessDate: isoToDbDate(iso), ...data },
       update: data,
     });

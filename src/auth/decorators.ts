@@ -1,4 +1,8 @@
-import { createParamDecorator, ExecutionContext, SetMetadata } from '@nestjs/common';
+import {
+  createParamDecorator,
+  ExecutionContext,
+  SetMetadata,
+} from '@nestjs/common';
 import type { AuthedRequest, StaffRole } from './auth.types.js';
 
 export const ROLES_KEY = 'servio:roles';

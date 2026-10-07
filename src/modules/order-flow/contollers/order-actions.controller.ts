@@ -1,6 +1,16 @@
-import { Body, Controller, HttpCode, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Post,
+} from '@nestjs/common';
 import { ApiHeader, ApiTags } from '@nestjs/swagger';
-import { ApprovalToken,RequiresApproval } from './../../../common/decorators/requires-approval/requires-approval.decorator.js';
+import {
+  ApprovalToken,
+  RequiresApproval,
+} from './../../../common/decorators/requires-approval/requires-approval.decorator.js';
 import { RequirePermission } from './../../../common/decorators/require-permission/require-permission.decorator.js';
 
 import { CurrentSession } from './../../../common/decorators/current-session/current-session.decorator.js';
@@ -24,33 +34,51 @@ export class OrderActionsController {
     private readonly voidItem: VoidItemUseCase,
   ) {}
 
-  @Post('send') @HttpCode(200)
+  @Post('send')
+  @HttpCode(200)
   @RequirePermission('order', 'update')
-  sendOrder(@CurrentSession() s: RequestSession, @Param('id', ParseUUIDPipe) id: string) {
+  sendOrder(
+    @CurrentSession() s: RequestSession,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.send.execute(s, id);
   }
 
-  @Post('serve') @HttpCode(200)
+  @Post('serve')
+  @HttpCode(200)
   @RequirePermission('order', 'update')
-  serveOrder(@CurrentSession() s: RequestSession, @Param('id', ParseUUIDPipe) id: string) {
+  serveOrder(
+    @CurrentSession() s: RequestSession,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.serve.execute(s, id);
   }
 
   @Post('bill')
   @RequirePermission('bill', 'create')
-  createBill(@CurrentSession() s: RequestSession, @Param('id', ParseUUIDPipe) id: string) {
+  createBill(
+    @CurrentSession() s: RequestSession,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.bill.execute(s, id);
   }
 
-  @Post('void') @HttpCode(200)
+  @Post('void')
+  @HttpCode(200)
   @RequirePermission('order', 'void')
   @RequiresApproval('order.void')
-  void(@CurrentSession() s: RequestSession, @Param('id', ParseUUIDPipe) id: string, @Body() dto: VoidDto, @ApprovalToken() token?: string) {
+  void(
+    @CurrentSession() s: RequestSession,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: VoidDto,
+    @ApprovalToken() token?: string,
+  ) {
     return this.voidOrder.execute(s, id, dto.reason, token);
   }
 
   /** Approval required only if the item was already sent (enforced in the use case). */
-  @Post('items/:itemId/void') @HttpCode(200)
+  @Post('items/:itemId/void')
+  @HttpCode(200)
   @RequirePermission('order', 'update')
   @ApiHeader({ name: 'X-Approval-Token', required: false })
   voidLine(

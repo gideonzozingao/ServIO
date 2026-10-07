@@ -17,7 +17,8 @@ import { slugify, uniqueSlug } from './slug.util.js';
 /** Identical for new and already-registered emails, so the endpoint can't be used to probe accounts. */
 export const REGISTRATION_ACCEPTED = {
   status: 'pending_verification',
-  message: 'Check your email to confirm your address and finish setting up your restaurant.',
+  message:
+    'Check your email to confirm your address and finish setting up your restaurant.',
 } as const;
 
 @Injectable()
@@ -46,30 +47,63 @@ export class RegistrationService {
     if (!this.app.selfSignupEnabled) throw new NotFoundException();
 
     if (await this.accounts.findUserByEmail(dto.email)) {
-      await this.mailer.send(templates.accountExists(dto.email, `${this.app.appUrl}/login`, `${this.app.appUrl}/forgot-password`));
+      await this.mailer.send(
+        templates.accountExists(
+          dto.email,
+          `${this.app.appUrl}/login`,
+          `${this.app.appUrl}/forgot-password`,
+        ),
+      );
       return REGISTRATION_ACCEPTED;
     }
 
-    const slug = dto.slug ?? (await uniqueSlug(slugify(dto.restaurantName), (s) => this.accounts.slugTaken(s)));
-    if (dto.slug && (await this.accounts.slugTaken(dto.slug))) throw new DomainConflictException('That restaurant handle is taken', 'SLUG_TAKEN');
+    const slug =
+      dto.slug ??
+      (await uniqueSlug(slugify(dto.restaurantName), (s) =>
+        this.accounts.slugTaken(s),
+      ));
+    if (dto.slug && (await this.accounts.slugTaken(dto.slug)))
+      throw new DomainConflictException(
+        'That restaurant handle is taken',
+        'SLUG_TAKEN',
+      );
 
     try {
       // The owner is created unverified: AuthService.createStaff defaults emailVerified to false,
       // and the verification email below is what flips it.
-      const { restaurantId, ownerUserId } = await this.authService.provisionRestaurant(
-        { restaurantName: dto.restaurantName, slug, ownerName: dto.ownerName, ownerEmail: dto.email, ownerPassword: dto.password },
-        createRestaurantForOrganization(this.prisma),
-      );
+      const { restaurantId, ownerUserId } =
+        await this.authService.provisionRestaurant(
+          {
+            restaurantName: dto.restaurantName,
+            slug,
+            ownerName: dto.ownerName,
+            ownerEmail: dto.email,
+            ownerPassword: dto.password,
+          },
+          createRestaurantForOrganization(this.prisma),
+        );
       await this.db.runFor(restaurantId, (tx) =>
-        this.audit.record(tx, { action: 'restaurant.register', subjectType: 'restaurant', subjectId: restaurantId, userId: ownerUserId, after: { slug, selfService: true } }),
+        this.audit.record(tx, {
+          action: 'restaurant.register',
+          subjectType: 'restaurant',
+          subjectId: restaurantId,
+          userId: ownerUserId,
+          after: { slug, selfService: true },
+        }),
       );
     } catch (e) {
       // Lost a race with a concurrent sign-up for the same email: same answer as above, nothing leaked.
-      if (await this.accounts.findUserByEmail(dto.email)) return REGISTRATION_ACCEPTED;
+      if (await this.accounts.findUserByEmail(dto.email))
+        return REGISTRATION_ACCEPTED;
       throw e;
     }
 
-    await this.auth.api.sendVerificationEmail({ body: { email: dto.email, callbackURL: `${this.app.appUrl}/login?verified=1` } });
+    await this.auth.api.sendVerificationEmail({
+      body: {
+        email: dto.email,
+        callbackURL: `${this.app.appUrl}/login?verified=1`,
+      },
+    });
     return REGISTRATION_ACCEPTED;
   }
 
@@ -94,8 +128,19 @@ export class RegistrationService {
     const inv = await this.accounts.getUsableInvitation(id);
     const { userId } = await this.accounts.acceptAsNewUser(inv, dto);
     await this.db.runFor(inv.organizationId, (tx) =>
-      this.audit.record(tx, { action: 'invitation.accept', subjectType: 'invitation', subjectId: inv.id, userId, after: { role: inv.role, newAccount: true } }),
+      this.audit.record(tx, {
+        action: 'invitation.accept',
+        subjectType: 'invitation',
+        subjectId: inv.id,
+        userId,
+        after: { role: inv.role, newAccount: true },
+      }),
     );
-    return { status: 'accepted', email: inv.email, restaurantId: inv.organizationId, role: inv.role };
+    return {
+      status: 'accepted',
+      email: inv.email,
+      restaurantId: inv.organizationId,
+      role: inv.role,
+    };
   }
 }

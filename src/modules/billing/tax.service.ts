@@ -7,7 +7,15 @@ import { RestaurantSettingsService } from '../settings/restaurant-settings.servi
 export class TaxService {
   constructor(private readonly settings: RestaurantSettingsService) {}
 
-  async totals(tx: TenantTx, subtotalMinor: number, discountMinor: number): Promise<Totals> {
-    return computeTotals(subtotalMinor, discountMinor, await this.settings.get(tx));
+  async totals(
+    tx: TenantTx,
+    subtotalMinor: number,
+    discountMinor: number,
+  ): Promise<Totals> {
+    return computeTotals(
+      subtotalMinor,
+      discountMinor,
+      await this.settings.get(tx),
+    );
   }
 }

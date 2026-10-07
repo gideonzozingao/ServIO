@@ -9,8 +9,11 @@ export class MenuListener {
 
   @OnEvent('menu.item.availability.changed')
   availability(e: DomainEventMap['menu.item.availability.changed']) {
-    this.rooms$.emit(rooms.all(e.restaurantId), 'menu.item.availability.changed', 
-    { menuItemId: e.menuItemId, available: e.available });
+    this.rooms$.emit(
+      rooms.all(e.restaurantId),
+      'menu.item.availability.changed',
+      { menuItemId: e.menuItemId, available: e.available },
+    );
   }
 
   /** Clients refetch GET /menu (ETag makes it cheap). */

@@ -25,25 +25,47 @@ const mailLog = new Logger('Mailer');
   providers: [
     {
       provide: BETTER_AUTH,
-      inject: [AuthPrismaClient, RedisService, ConfigService, PrismaService, DomainEvents],
-      useFactory: (authPrisma: AuthPrismaClient, redis: RedisService, config: ConfigService, prisma: PrismaService, events: DomainEvents, mailer: MailerService) => {
+      inject: [
+        AuthPrismaClient,
+        RedisService,
+        ConfigService,
+        PrismaService,
+        DomainEvents,
+      ],
+      useFactory: (
+        authPrisma: AuthPrismaClient,
+        redis: RedisService,
+        config: ConfigService,
+        prisma: PrismaService,
+        events: DomainEvents,
+        mailer: MailerService,
+      ) => {
         const app = config.getOrThrow<AppConfig>('app');
         return createAuth({
           prisma: authPrisma,
           secret: app.auth.secret,
           baseURL: app.auth.baseUrl,
           trustedOrigins: app.corsOrigins,
-          trustedProxies: app.trustedProxies.length ? app.trustedProxies : undefined,
+          trustedProxies: app.trustedProxies.length
+            ? app.trustedProxies
+            : undefined,
           secondaryStorage: redis.asSecondaryStorage(),
           staff: {
             pinPepper: app.auth.pinPepper,
             staffSessionHours: app.auth.staffSessionHours,
-            onDeviceRevoked: (e: { organizationId: string; deviceId: string }) =>
-              events.emit('device.revoked', { restaurantId: e.organizationId, deviceId: e.deviceId }),
+            onDeviceRevoked: (e: {
+              organizationId: string;
+              deviceId: string;
+            }) =>
+              events.emit('device.revoked', {
+                restaurantId: e.organizationId,
+                deviceId: e.deviceId,
+              }),
           },
           onOrganizationCreated: createRestaurantForOrganization(prisma),
           // TODO(mail provider, open question): replace with SES/Postmark.
-          sendResetPassword: async (email, url) => mailLog.warn(`password reset for ${email}: ${url}`),
+          sendResetPassword: async (email, url) =>
+            mailLog.warn(`password reset for ${email}: ${url}`),
         });
       },
     },
@@ -54,6 +76,14 @@ const mailLog = new Logger('Mailer');
     PermissionGuard,
     ManagerApprovalGuard,
   ],
-  exports: [BETTER_AUTH, AuthService, AccountAuthService, MemberRoleService, ManagerApprovalService, PermissionGuard, ManagerApprovalGuard],
+  exports: [
+    BETTER_AUTH,
+    AuthService,
+    AccountAuthService,
+    MemberRoleService,
+    ManagerApprovalService,
+    PermissionGuard,
+    ManagerApprovalGuard,
+  ],
 })
 export class AuthModule {}

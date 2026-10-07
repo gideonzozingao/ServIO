@@ -4,7 +4,10 @@ import { PrismaService } from '../../../database/prisma.service.js';
 
 @Injectable()
 export class PrismaHealthIndicator {
-  constructor(private readonly prisma: PrismaService, private readonly health: HealthIndicatorService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly health: HealthIndicatorService,
+  ) {}
 
   async check(key = 'database') {
     const i = this.health.check(key);

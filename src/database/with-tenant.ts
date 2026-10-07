@@ -24,7 +24,8 @@ export function withTenant<T>(
 ): Promise<T> {
   if (!restaurantId) throw new Error('withTenant: restaurantId is required');
   const outer = tenantScope.current();
-  if (outer && outer !== restaurantId) throw new Error('withTenant: nested call with a different tenant');
+  if (outer && outer !== restaurantId)
+    throw new Error('withTenant: nested call with a different tenant');
 
   return tenantScope.run(restaurantId, () =>
     prisma.app.$transaction(

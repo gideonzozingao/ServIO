@@ -7,7 +7,12 @@ import { MenuController } from './menu.controller.js';
 import { ModifierGroupsController } from './modifier-groups.controller.js';
 
 @Module({
-  controllers: [MenuController, CategoriesController, MenuItemsController, ModifierGroupsController],
+  controllers: [
+    MenuController,
+    CategoriesController,
+    MenuItemsController,
+    ModifierGroupsController,
+  ],
   providers: [CatalogService, MenuQueryService],
   exports: [MenuQueryService],
 })

@@ -6,7 +6,11 @@ import { tenantScope } from './tenant-scope.js';
 /** Human-friendly per-day numbers (order #17, bill #9) without table locks. */
 @Injectable()
 export class DocumentNumberService {
-  async next(tx: TenantTx, scope: CounterScope, businessDate: Date): Promise<number> {
+  async next(
+    tx: TenantTx,
+    scope: CounterScope,
+    businessDate: Date,
+  ): Promise<number> {
     const restaurantId = tenantScope.require();
     const day = businessDate.toISOString().slice(0, 10);
     const rows = await tx.$queryRaw<{ last_value: number }[]>`

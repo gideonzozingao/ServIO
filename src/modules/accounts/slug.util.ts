@@ -13,7 +13,10 @@ export function slugify(name: string): string {
 }
 
 /** First free of: base, base-2..base-5, then base-<random>. */
-export async function uniqueSlug(base: string, taken: (slug: string) => Promise<boolean>): Promise<string> {
+export async function uniqueSlug(
+  base: string,
+  taken: (slug: string) => Promise<boolean>,
+): Promise<string> {
   const candidates = [base, ...[2, 3, 4, 5].map((n) => `${base}-${n}`)];
   for (const c of candidates) if (!(await taken(c))) return c;
   return `${base}-${randomBytes(3).toString('hex')}`;

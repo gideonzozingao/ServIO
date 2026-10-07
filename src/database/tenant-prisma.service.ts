@@ -23,7 +23,11 @@ export class TenantPrismaService {
   }
 
   /** Explicit tenant (jobs, hooks, socket handlers with no HTTP context). */
-  runFor<T>(restaurantId: string, fn: (tx: TenantTx) => Promise<T>, opts?: TenantTxOptions): Promise<T> {
+  runFor<T>(
+    restaurantId: string,
+    fn: (tx: TenantTx) => Promise<T>,
+    opts?: TenantTxOptions,
+  ): Promise<T> {
     return withTenant(this.prisma, restaurantId, fn, opts);
   }
 }

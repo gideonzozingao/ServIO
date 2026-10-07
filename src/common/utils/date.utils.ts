@@ -48,7 +48,10 @@ export type DateErrorCode =
   | 'INVALID_INPUT';
 
 export class DateError extends Error {
-  constructor(message: string, readonly code: DateErrorCode) {
+  constructor(
+    message: string,
+    readonly code: DateErrorCode,
+  ) {
     super(message);
     this.name = 'DateError';
   }
@@ -64,7 +67,10 @@ const YMD_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 // ── Validation ───────────────────────────────────────────────────────────────
 
-export function assertValidDate(value: unknown, label = 'date'): asserts value is Date {
+export function assertValidDate(
+  value: unknown,
+  label = 'date',
+): asserts value is Date {
   if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
     throw new DateError(`${label} must be a valid Date`, 'INVALID_DATE');
   }
@@ -81,13 +87,25 @@ export function isValidTimeZone(tz: unknown): tz is string {
 }
 
 export function assertTimeZone(tz: unknown): asserts tz is string {
-  if (!isValidTimeZone(tz)) throw new DateError(`invalid IANA timezone "${String(tz)}"`, 'INVALID_TIMEZONE');
+  if (!isValidTimeZone(tz))
+    throw new DateError(
+      `invalid IANA timezone "${String(tz)}"`,
+      'INVALID_TIMEZONE',
+    );
 }
 
 /** Rollover hour: integer 0-12 (0 = calendar midnight). */
 export function assertRolloverHour(hour: unknown): asserts hour is number {
-  if (typeof hour !== 'number' || !Number.isInteger(hour) || hour < 0 || hour > 12) {
-    throw new DateError('rolloverHour must be an integer between 0 and 12', 'INVALID_ROLLOVER');
+  if (
+    typeof hour !== 'number' ||
+    !Number.isInteger(hour) ||
+    hour < 0 ||
+    hour > 12
+  ) {
+    throw new DateError(
+      'rolloverHour must be an integer between 0 and 12',
+      'INVALID_ROLLOVER',
+    );
   }
 }
 
@@ -99,13 +117,22 @@ export function buildYmd(year: number, month: number, day: number): Ymd {
 
 export function parseYmd(ymd: string): YmdParts {
   const m = typeof ymd === 'string' ? YMD_RE.exec(ymd) : null;
-  if (!m) throw new DateError(`invalid date "${String(ymd)}", expected YYYY-MM-DD`, 'INVALID_YMD');
+  if (!m)
+    throw new DateError(
+      `invalid date "${String(ymd)}", expected YYYY-MM-DD`,
+      'INVALID_YMD',
+    );
   const year = Number(m[1]);
   const month = Number(m[2]);
   const day = Number(m[3]);
-  if (year < 1900) throw new DateError(`year out of range in "${ymd}"`, 'INVALID_YMD');
+  if (year < 1900)
+    throw new DateError(`year out of range in "${ymd}"`, 'INVALID_YMD');
   const d = new Date(Date.UTC(year, month - 1, day));
-  if (d.getUTCFullYear() !== year || d.getUTCMonth() !== month - 1 || d.getUTCDate() !== day) {
+  if (
+    d.getUTCFullYear() !== year ||
+    d.getUTCMonth() !== month - 1 ||
+    d.getUTCDate() !== day
+  ) {
     throw new DateError(`"${ymd}" is not a real calendar date`, 'INVALID_YMD');
   }
   return { year, month, day };
@@ -132,7 +159,8 @@ function utcMsToYmd(ms: number): Ymd {
 }
 
 export function addDaysYmd(ymd: Ymd, days: number): Ymd {
-  if (!Number.isInteger(days)) throw new DateError('days must be an integer', 'INVALID_INPUT');
+  if (!Number.isInteger(days))
+    throw new DateError('days must be an integer', 'INVALID_INPUT');
   return utcMsToYmd(ymdToUtcMs(ymd) + days * MS_PER_DAY);
 }
 
@@ -155,7 +183,8 @@ export function weekdayOfYmd(ymd: Ymd): number {
 /** Every day from `from` to `to`, inclusive. */
 export function eachDay(from: Ymd, to: Ymd): Ymd[] {
   const count = daysBetween(from, to);
-  if (count < 0) throw new DateError('from must not be after to', 'INVALID_RANGE');
+  if (count < 0)
+    throw new DateError('from must not be after to', 'INVALID_RANGE');
   return Array.from({ length: count + 1 }, (_, i) => addDaysYmd(from, i));
 }
 
@@ -182,13 +211,22 @@ export function endOfMonthYmd(ymd: Ymd): Ymd {
  * Validate a report range from API params.
  * Rejects bad dates, from > to, and ranges longer than maxDays (inclusive).
  */
-export function normalizeRange(from: string, to: string, opts: { maxDays?: number } = {}): { from: Ymd; to: Ymd; days: number } {
+export function normalizeRange(
+  from: string,
+  to: string,
+  opts: { maxDays?: number } = {},
+): { from: Ymd; to: Ymd; days: number } {
   const { maxDays = 366 } = opts;
   parseYmd(from);
   parseYmd(to);
   const days = daysBetween(from, to) + 1;
-  if (days < 1) throw new DateError('from must not be after to', 'INVALID_RANGE');
-  if (days > maxDays) throw new DateError(`range must not exceed ${maxDays} days`, 'INVALID_RANGE');
+  if (days < 1)
+    throw new DateError('from must not be after to', 'INVALID_RANGE');
+  if (days > maxDays)
+    throw new DateError(
+      `range must not exceed ${maxDays} days`,
+      'INVALID_RANGE',
+    );
   return { from, to, days };
 }
 
@@ -229,7 +267,10 @@ function partsFormatter(tz: string): Intl.DateTimeFormat {
 }
 
 /** Wall-clock fields of an instant in the given timezone. */
-export function getZonedParts(instant: Date, tz: string = DEFAULT_TIMEZONE): ZonedParts {
+export function getZonedParts(
+  instant: Date,
+  tz: string = DEFAULT_TIMEZONE,
+): ZonedParts {
   assertValidDate(instant, 'instant');
   const bag: Record<string, number> = {};
   for (const p of partsFormatter(tz).formatToParts(instant)) {
@@ -246,10 +287,21 @@ export function getZonedParts(instant: Date, tz: string = DEFAULT_TIMEZONE): Zon
 }
 
 /** Offset of `tz` from UTC at `instant`, in minutes (Port Moresby = 600). */
-export function getTimeZoneOffsetMinutes(instant: Date, tz: string = DEFAULT_TIMEZONE): number {
+export function getTimeZoneOffsetMinutes(
+  instant: Date,
+  tz: string = DEFAULT_TIMEZONE,
+): number {
   const p = getZonedParts(instant, tz);
-  const asUtc = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
-  const instantSeconds = Math.floor(instant.getTime() / MS_PER_SECOND) * MS_PER_SECOND;
+  const asUtc = Date.UTC(
+    p.year,
+    p.month - 1,
+    p.day,
+    p.hour,
+    p.minute,
+    p.second,
+  );
+  const instantSeconds =
+    Math.floor(instant.getTime() / MS_PER_SECOND) * MS_PER_SECOND;
   return (asUtc - instantSeconds) / MS_PER_MINUTE;
 }
 
@@ -260,9 +312,11 @@ export function zonedTimeToInstant(
 ): Date {
   const { year, month, day, hour = 0, minute = 0, second = 0 } = parts;
   const naive = Date.UTC(year, month - 1, day, hour, minute, second);
-  const firstOffset = getTimeZoneOffsetMinutes(new Date(naive), tz) * MS_PER_MINUTE;
+  const firstOffset =
+    getTimeZoneOffsetMinutes(new Date(naive), tz) * MS_PER_MINUTE;
   let result = naive - firstOffset;
-  const secondOffset = getTimeZoneOffsetMinutes(new Date(result), tz) * MS_PER_MINUTE;
+  const secondOffset =
+    getTimeZoneOffsetMinutes(new Date(result), tz) * MS_PER_MINUTE;
   if (secondOffset !== firstOffset) result = naive - secondOffset;
   return new Date(result);
 }
@@ -279,7 +333,11 @@ export function localYmd(instant: Date, tz: string = DEFAULT_TIMEZONE): Ymd {
  * The trading day an instant belongs to.
  * rolloverHour = 4: 2026-10-08 01:30 local → business date 2026-10-07.
  */
-export function businessDateFor(instant: Date, tz: string = DEFAULT_TIMEZONE, rolloverHour = 0): Ymd {
+export function businessDateFor(
+  instant: Date,
+  tz: string = DEFAULT_TIMEZONE,
+  rolloverHour = 0,
+): Ymd {
   assertRolloverHour(rolloverHour);
   const p = getZonedParts(instant, tz);
   const ymd = buildYmd(p.year, p.month, p.day);
@@ -287,16 +345,32 @@ export function businessDateFor(instant: Date, tz: string = DEFAULT_TIMEZONE, ro
 }
 
 /** Instants covered by a business date: [start, end). Length is 24h except across DST changes. */
-export function businessDayRange(businessDate: Ymd, tz: string = DEFAULT_TIMEZONE, rolloverHour = 0): InstantRange {
+export function businessDayRange(
+  businessDate: Ymd,
+  tz: string = DEFAULT_TIMEZONE,
+  rolloverHour = 0,
+): InstantRange {
   assertRolloverHour(rolloverHour);
-  const start = zonedTimeToInstant({ ...parseYmd(businessDate), hour: rolloverHour }, tz);
-  const end = zonedTimeToInstant({ ...parseYmd(addDaysYmd(businessDate, 1)), hour: rolloverHour }, tz);
+  const start = zonedTimeToInstant(
+    { ...parseYmd(businessDate), hour: rolloverHour },
+    tz,
+  );
+  const end = zonedTimeToInstant(
+    { ...parseYmd(addDaysYmd(businessDate, 1)), hour: rolloverHour },
+    tz,
+  );
   return { start, end };
 }
 
 /** Instants covered by business dates from..to inclusive: [start of from, end of to). */
-export function businessRange(from: Ymd, to: Ymd, tz: string = DEFAULT_TIMEZONE, rolloverHour = 0): InstantRange {
-  if (compareYmd(from, to) > 0) throw new DateError('from must not be after to', 'INVALID_RANGE');
+export function businessRange(
+  from: Ymd,
+  to: Ymd,
+  tz: string = DEFAULT_TIMEZONE,
+  rolloverHour = 0,
+): InstantRange {
+  if (compareYmd(from, to) > 0)
+    throw new DateError('from must not be after to', 'INVALID_RANGE');
   return {
     start: businessDayRange(from, tz, rolloverHour).start,
     end: businessDayRange(to, tz, rolloverHour).end,
@@ -304,7 +378,11 @@ export function businessRange(from: Ymd, to: Ymd, tz: string = DEFAULT_TIMEZONE,
 }
 
 /** Today's business date. */
-export function currentBusinessDate(tz: string = DEFAULT_TIMEZONE, rolloverHour = 0, now: Date = new Date()): Ymd {
+export function currentBusinessDate(
+  tz: string = DEFAULT_TIMEZONE,
+  rolloverHour = 0,
+  now: Date = new Date(),
+): Ymd {
   return businessDateFor(now, tz, rolloverHour);
 }
 
@@ -332,7 +410,10 @@ export function isExpired(expiresAt: Date, now: Date = new Date()): boolean {
 /** Whole seconds until `date` (rounded up), never negative. Handy for Redis TTLs. */
 export function secondsUntil(date: Date, now: Date = new Date()): number {
   assertValidDate(date);
-  return Math.max(0, Math.ceil((date.getTime() - now.getTime()) / MS_PER_SECOND));
+  return Math.max(
+    0,
+    Math.ceil((date.getTime() - now.getTime()) / MS_PER_SECOND),
+  );
 }
 
 /** Milliseconds elapsed since `from`, never negative. */
@@ -351,8 +432,10 @@ export function clampToServerTime(
   serverNow: Date = new Date(),
   maxFutureSkewMs = 5 * MS_PER_MINUTE,
 ): { at: Date; adjusted: boolean } {
-  if (!(clientTime instanceof Date) || Number.isNaN(clientTime.getTime())) return { at: serverNow, adjusted: true };
-  if (clientTime.getTime() > serverNow.getTime() + maxFutureSkewMs) return { at: serverNow, adjusted: true };
+  if (!(clientTime instanceof Date) || Number.isNaN(clientTime.getTime()))
+    return { at: serverNow, adjusted: true };
+  if (clientTime.getTime() > serverNow.getTime() + maxFutureSkewMs)
+    return { at: serverNow, adjusted: true };
   return { at: clientTime, adjusted: false };
 }
 
@@ -360,7 +443,11 @@ export function clampToServerTime(
 
 /** 425000 → "7:05"; 3900000 → "1h 05m". */
 export function formatElapsed(ms: number): string {
-  if (!Number.isFinite(ms) || ms < 0) throw new DateError('elapsed time must be a non-negative number', 'INVALID_INPUT');
+  if (!Number.isFinite(ms) || ms < 0)
+    throw new DateError(
+      'elapsed time must be a non-negative number',
+      'INVALID_INPUT',
+    );
   const totalSeconds = Math.floor(ms / MS_PER_SECOND);
   if (totalSeconds < 3600) {
     const m = Math.floor(totalSeconds / 60);
@@ -379,7 +466,8 @@ export function ticketAgeSeverity(
   ageMs: number,
   thresholds: { warnAfterMs?: number; lateAfterMs?: number } = {},
 ): TicketSeverity {
-  const { warnAfterMs = 10 * MS_PER_MINUTE, lateAfterMs = 15 * MS_PER_MINUTE } = thresholds;
+  const { warnAfterMs = 10 * MS_PER_MINUTE, lateAfterMs = 15 * MS_PER_MINUTE } =
+    thresholds;
   if (ageMs >= lateAfterMs) return 'late';
   if (ageMs >= warnAfterMs) return 'warning';
   return 'ok';
@@ -387,7 +475,10 @@ export function ticketAgeSeverity(
 
 // ── Display formatting (UI and receipts only) ────────────────────────────────
 
-function intl(locale: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+function intl(
+  locale: string,
+  options: Intl.DateTimeFormatOptions,
+): Intl.DateTimeFormat {
   try {
     return new Intl.DateTimeFormat(locale, options);
   } catch {
@@ -400,7 +491,10 @@ export function formatDateTime(
   instant: Date,
   tz: string = DEFAULT_TIMEZONE,
   locale = 'en-PG',
-  options: Intl.DateTimeFormatOptions = { dateStyle: 'medium', timeStyle: 'short' },
+  options: Intl.DateTimeFormatOptions = {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  },
 ): string {
   assertValidDate(instant, 'instant');
   assertTimeZone(tz);
@@ -408,16 +502,30 @@ export function formatDateTime(
 }
 
 /** "1:30 am" in the restaurant's timezone. */
-export function formatTime(instant: Date, tz: string = DEFAULT_TIMEZONE, locale = 'en-PG'): string {
-  return formatDateTime(instant, tz, locale, { hour: 'numeric', minute: '2-digit' });
+export function formatTime(
+  instant: Date,
+  tz: string = DEFAULT_TIMEZONE,
+  locale = 'en-PG',
+): string {
+  return formatDateTime(instant, tz, locale, {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 }
 
 /** Display a business date ("Wed, 7 Oct 2026") without any timezone shifting. */
 export function formatBusinessDate(
   ymd: Ymd,
   locale = 'en-PG',
-  options: Intl.DateTimeFormatOptions = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' },
+  options: Intl.DateTimeFormatOptions = {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  },
 ): string {
   const { year, month, day } = parseYmd(ymd);
-  return intl(locale, { ...options, timeZone: 'UTC' }).format(new Date(Date.UTC(year, month - 1, day, 12)));
+  return intl(locale, { ...options, timeZone: 'UTC' }).format(
+    new Date(Date.UTC(year, month - 1, day, 12)),
+  );
 }

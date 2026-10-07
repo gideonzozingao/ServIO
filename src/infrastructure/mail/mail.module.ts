@@ -1,7 +1,12 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RedisService } from '../redis/redis.service.js';
-import { LogMailTransport, MAIL_TRANSPORT, MailerService, type MailTransport } from './mailer.service.js';
+import {
+  LogMailTransport,
+  MAIL_TRANSPORT,
+  MailerService,
+  type MailTransport,
+} from './mailer.service.js';
 @Global()
 @Module({
   providers: [
@@ -9,7 +14,8 @@ import { LogMailTransport, MAIL_TRANSPORT, MailerService, type MailTransport } f
     {
       provide: MailerService,
       inject: [MAIL_TRANSPORT, RedisService, ConfigService],
-      useFactory: (t: MailTransport, r: RedisService, c: ConfigService) => new MailerService(t, r, c),
+      useFactory: (t: MailTransport, r: RedisService, c: ConfigService) =>
+        new MailerService(t, r, c),
     },
   ],
   exports: [MailerService],

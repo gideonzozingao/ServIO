@@ -6,15 +6,25 @@ import { QUEUES, type PushTicketReadyJob } from '../queues.js';
 export const PUSH_SENDER = Symbol('PUSH_SENDER');
 
 export interface PushSender {
-  sendToUser(restaurantId: string, userId: string, message: { title: string; body: string; data?: Record<string, string> }): Promise<void>;
+  sendToUser(
+    restaurantId: string,
+    userId: string,
+    message: { title: string; body: string; data?: Record<string, string> },
+  ): Promise<void>;
 }
 
 /** Placeholder until a provider is chosen (Expo push / FCM). Sockets already deliver ticket.ready in-app. */
 @Injectable()
 export class LogPushSender implements PushSender {
   private readonly logger = new Logger('Push');
-  async sendToUser(restaurantId: string, userId: string, message: { title: string; body: string }) {
-    this.logger.log(`[${restaurantId}] → ${userId}: ${message.title} — ${message.body}`);
+  async sendToUser(
+    restaurantId: string,
+    userId: string,
+    message: { title: string; body: string },
+  ) {
+    this.logger.log(
+      `[${restaurantId}] → ${userId}: ${message.title} — ${message.body}`,
+    );
   }
 }
 

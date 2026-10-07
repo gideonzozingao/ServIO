@@ -16,7 +16,10 @@ export const tenantScope = {
   },
   require(): string {
     const id = scope.getStore();
-    if (!id) throw new Error('Tenant scope missing: tenant-owned data must be accessed inside withTenant()');
+    if (!id)
+      throw new Error(
+        'Tenant scope missing: tenant-owned data must be accessed inside withTenant()',
+      );
     return id;
   },
 };

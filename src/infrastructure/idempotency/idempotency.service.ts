@@ -6,7 +6,9 @@ import { rid } from '../../database/tenant-scope.js';
 const IN_FLIGHT = 0;
 const TTL_HOURS = 24;
 
-export type BeginResult = { kind: 'proceed'; id: string } | { kind: 'replay'; status: number; body: unknown };
+export type BeginResult =
+  | { kind: 'proceed'; id: string }
+  | { kind: 'replay'; status: number; body: unknown };
 
 /**
  * Reserve-then-complete:
@@ -18,7 +20,11 @@ export type BeginResult = { kind: 'proceed'; id: string } | { kind: 'replay'; st
 export class IdempotencyService {
   constructor(private readonly db: TenantPrismaService) {}
 
-  async begin(key: string, scope: string, requestHash: string): Promise<BeginResult> {
+  async begin(
+    key: string,
+    scope: string,
+    requestHash: string,
+  ): Promise<BeginResult> {
     try {
       const row = await this.db.run((tx) =>
         tx.idempotencyKey.create({
@@ -36,22 +42,43 @@ export class IdempotencyService {
       );
       return { kind: 'proceed', id: row.id };
     } catch (e) {
-      if (!(e instanceof Prisma.PrismaClientKnownRequestError) || e.code !== 'P2002') throw e;
+      if (
+        !(e instanceof Prisma.PrismaClientKnownRequestError) ||
+        e.code !== 'P2002'
+      )
+        throw e;
     }
 
     const existing = await this.db.run((tx) =>
       tx.idempotencyKey.findFirst({ where: { key, scope } }),
     );
-    if (!existing) throw new ConflictException('Idempotency key conflict, retry');
-    if (existing.requestHash !== requestHash) throw new ConflictException('Idempotency-Key reused with a different request');
-    if (existing.responseStatus === IN_FLIGHT) throw new ConflictException('Request with this Idempotency-Key is still in progress');
-    return { kind: 'replay', status: existing.responseStatus, body: existing.responseBody };
+    if (!existing)
+      throw new ConflictException('Idempotency key conflict, retry');
+    if (existing.requestHash !== requestHash)
+      throw new ConflictException(
+        'Idempotency-Key reused with a different request',
+      );
+    if (existing.responseStatus === IN_FLIGHT)
+      throw new ConflictException(
+        'Request with this Idempotency-Key is still in progress',
+      );
+    return {
+      kind: 'replay',
+      status: existing.responseStatus,
+      body: existing.responseBody,
+    };
   }
 
   async complete(id: string, status: number, body: unknown): Promise<void> {
-    const json = body === undefined ? null : (JSON.parse(JSON.stringify(body)) as Prisma.InputJsonValue);
+    const json =
+      body === undefined
+        ? null
+        : (JSON.parse(JSON.stringify(body)) as Prisma.InputJsonValue);
     await this.db.run((tx) =>
-      tx.idempotencyKey.update({ where: { id }, data: { responseStatus: status, responseBody: json ?? Prisma.JsonNull } }),
+      tx.idempotencyKey.update({
+        where: { id },
+        data: { responseStatus: status, responseBody: json ?? Prisma.JsonNull },
+      }),
     );
   }
 

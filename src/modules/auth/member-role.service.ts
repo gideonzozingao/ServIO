@@ -17,7 +17,10 @@ export class MemberRoleService {
     return `member-role:${org}:${user}`;
   }
 
-  async roleOf(organizationId: string, userId: string): Promise<StaffRole | null> {
+  async roleOf(
+    organizationId: string,
+    userId: string,
+  ): Promise<StaffRole | null> {
     const k = this.key(organizationId, userId);
     const cached = await this.redis.client.get(k);
     if (cached) return cached === '-' ? null : (cached as StaffRole);

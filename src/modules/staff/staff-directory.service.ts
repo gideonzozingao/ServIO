@@ -9,10 +9,15 @@ import { PrismaService } from '../../database/prisma.service.js';
 export class StaffDirectoryService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async namesByIds(ids: Array<string | null | undefined>): Promise<Map<string, string>> {
+  async namesByIds(
+    ids: Array<string | null | undefined>,
+  ): Promise<Map<string, string>> {
     const unique = [...new Set(ids.filter((x): x is string => !!x))];
     if (!unique.length) return new Map();
-    const users = await this.prisma.app.user.findMany({ where: { id: { in: unique } }, select: { id: true, name: true } });
+    const users = await this.prisma.app.user.findMany({
+      where: { id: { in: unique } },
+      select: { id: true, name: true },
+    });
     return new Map(users.map((u) => [u.id, u.name]));
   }
 

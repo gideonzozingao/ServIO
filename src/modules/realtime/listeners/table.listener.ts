@@ -9,6 +9,9 @@ export class TableListener {
 
   @OnEvent('table.status.changed')
   changed(e: DomainEventMap['table.status.changed']) {
-    this.rooms$.emit(rooms.waiters(e.restaurantId), 'table.status.changed', { tableId: e.tableId, status: e.status });
+    this.rooms$.emit(rooms.waiters(e.restaurantId), 'table.status.changed', {
+      tableId: e.tableId,
+      status: e.status,
+    });
   }
 }

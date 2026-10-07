@@ -1,7 +1,10 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bullmq';
-import { addDays, businessDateFor } from '../../common/utils/business-date.util.js';
+import {
+  addDays,
+  businessDateFor,
+} from '../../common/utils/business-date.util.js';
 import { DailyRollupService } from '../../modules/reporting/daily-rollup.service.js';
 import { RestaurantSettingsService } from '../../modules/settings/restaurant-settings.service.js';
 import { QUEUES, type DailyRollupJob } from '../queues.js';
@@ -28,7 +31,12 @@ export class DailyRollupProcessor extends WorkerHost {
       (restaurantId) =>
         this.runner.run(restaurantId, async (tx) => {
           const s = await this.settings.get(tx);
-          const iso = job.data.date ?? addDays(businessDateFor(new Date(), s.timezone, s.dayRolloverHour).iso, -1);
+          const iso =
+            job.data.date ??
+            addDays(
+              businessDateFor(new Date(), s.timezone, s.dayRolloverHour).iso,
+              -1,
+            );
           await this.rollup.persist(tx, iso);
         }),
       job.data.restaurantId,

@@ -1,11 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import { DomainConflictException, InvalidStateException } from '../../common/exceptions/domain.exceptions.js';
+import {
+  DomainConflictException,
+  InvalidStateException,
+} from '../../common/exceptions/domain.exceptions.js';
 import type { TenantTx } from '../../common/types/tx.type.js';
 import { OrderStatus, TicketStatus } from '../../database/prisma-client.js';
 
 const S = OrderStatus;
 
-export { BILLABLE_ORDER_STATUSES, EDITABLE_ORDER_STATUSES, OPEN_ORDER_STATUSES, TERMINAL_ORDER_STATUSES } from '../../common/types/order-status.js';
+export {
+  BILLABLE_ORDER_STATUSES,
+  EDITABLE_ORDER_STATUSES,
+  OPEN_ORDER_STATUSES,
+  TERMINAL_ORDER_STATUSES,
+} from '../../common/types/order-status.js';
 
 /**
  * v4 transitions, extended for multi-round orders: adding items after READY/SERVED and sending again
@@ -30,18 +38,34 @@ export class OrderStateMachine {
   }
 
   assertCan(from: OrderStatus, to: OrderStatus): void {
-    if (!this.canTransition(from, to)) throw new InvalidStateException(`Invalid order transition ${from} -> ${to}`);
+    if (!this.canTransition(from, to))
+      throw new InvalidStateException(
+        `Invalid order transition ${from} -> ${to}`,
+      );
   }
 
   /**
    * Race-safe transition: only applies if the row is still in `from`.
    * Returns true when the status actually changed.
    */
-  async transition(tx: TenantTx, orderId: string, from: OrderStatus, to: OrderStatus, extra: Record<string, unknown> = {}): Promise<boolean> {
+  async transition(
+    tx: TenantTx,
+    orderId: string,
+    from: OrderStatus,
+    to: OrderStatus,
+    extra: Record<string, unknown> = {},
+  ): Promise<boolean> {
     if (from === to) return false;
     this.assertCan(from, to);
-    const n = await tx.order.updateMany({ where: { id: orderId, status: from }, data: { status: to, ...extra } });
-    if (n.count !== 1) throw new DomainConflictException('Order changed concurrently, please retry', 'ORDER_CONFLICT');
+    const n = await tx.order.updateMany({
+      where: { id: orderId, status: from },
+      data: { status: to, ...extra },
+    });
+    if (n.count !== 1)
+      throw new DomainConflictException(
+        'Order changed concurrently, please retry',
+        'ORDER_CONFLICT',
+      );
     return true;
   }
 

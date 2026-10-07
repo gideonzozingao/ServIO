@@ -20,12 +20,28 @@ import { VoidOrderUseCase } from './use-cases/void-order.use-case.js';
 
 /** Sits above orders/kitchen/billing/floor and orchestrates them; nothing imports this module. */
 @Module({
-  imports: [OrdersModule, KitchenModule, BillingModule, FloorModule, CatalogModule],
-  controllers: [OrderActionsController, KitchenActionsController, BillActionsController],
+  imports: [
+    OrdersModule,
+    KitchenModule,
+    BillingModule,
+    FloorModule,
+    CatalogModule,
+  ],
+  controllers: [
+    OrderActionsController,
+    KitchenActionsController,
+    BillActionsController,
+  ],
   providers: [
     OrderRollupService,
-    SendOrderUseCase, AdvanceTicketUseCase, ServeOrderUseCase, CreateBillUseCase,
-    RecordPaymentUseCase, ApplyDiscountUseCase, VoidOrderUseCase, VoidItemUseCase,
+    SendOrderUseCase,
+    AdvanceTicketUseCase,
+    ServeOrderUseCase,
+    CreateBillUseCase,
+    RecordPaymentUseCase,
+    ApplyDiscountUseCase,
+    VoidOrderUseCase,
+    VoidItemUseCase,
   ],
 })
 export class OrderFlowModule {}

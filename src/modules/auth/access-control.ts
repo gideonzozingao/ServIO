@@ -18,19 +18,40 @@ export const ac = createAccessControl(statement);
 
 export const roles = {
   owner: ac.newRole({
-    menu: ['read', 'manage'], order: ['create', 'update', 'void'], ticket: ['read', 'update'],
-    bill: ['create', 'pay', 'discount'], report: ['read'], staff: ['manage'], settings: ['manage'],
+    menu: ['read', 'manage'],
+    order: ['create', 'update', 'void'],
+    ticket: ['read', 'update'],
+    bill: ['create', 'pay', 'discount'],
+    report: ['read'],
+    staff: ['manage'],
+    settings: ['manage'],
   }),
   manager: ac.newRole({
-    menu: ['read', 'manage'], order: ['create', 'update', 'void'], ticket: ['read', 'update'],
-    bill: ['create', 'pay', 'discount'], report: ['read'],
+    menu: ['read', 'manage'],
+    order: ['create', 'update', 'void'],
+    ticket: ['read', 'update'],
+    bill: ['create', 'pay', 'discount'],
+    report: ['read'],
   }),
-  waiter: ac.newRole({ menu: ['read'], order: ['create', 'update'], ticket: ['read'], bill: ['create'] }),
+  waiter: ac.newRole({
+    menu: ['read'],
+    order: ['create', 'update'],
+    ticket: ['read'],
+    bill: ['create'],
+  }),
   kitchen: ac.newRole({ menu: ['read'], ticket: ['read', 'update'] }),
-  cashier: ac.newRole({ menu: ['read'], order: ['update'], bill: ['create', 'pay'] }),
+  cashier: ac.newRole({
+    menu: ['read'],
+    order: ['update'],
+    bill: ['create', 'pay'],
+  }),
 } satisfies Record<StaffRole, unknown>;
 
-export function hasPermission<R extends keyof Statement>(role: StaffRole, resource: R, action: Statement[R][number]): boolean {
+export function hasPermission<R extends keyof Statement>(
+  role: StaffRole,
+  resource: R,
+  action: Statement[R][number],
+): boolean {
   return roles[role].authorize({ [resource]: [action] } as never).success;
 }
 
@@ -39,7 +60,8 @@ export function permissionsFor(role: StaffRole): string[] {
   const out: string[] = [];
   for (const resource of Object.keys(statement) as (keyof Statement)[]) {
     for (const action of statement[resource]) {
-      if (hasPermission(role, resource, action as never)) out.push(`${resource}:${action}`);
+      if (hasPermission(role, resource, action as never))
+        out.push(`${resource}:${action}`);
     }
   }
   return out;

@@ -5,12 +5,15 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { DomainException } from '../../common/exceptions/domain.exceptions.js';
 import type { TaxRule } from '../../common/money/tax.util.js';
 import type { TenantTx } from '../../common/types/tx.type.js';
-import { businessDateFor, isValidTimezone, type BusinessDate } from '../../common/utils/business-date.util.js';
+import {
+  businessDateFor,
+  isValidTimezone,
+  type BusinessDate,
+} from '../../common/utils/business-date.util.js';
 import { TenantPrismaService } from '../../database/tenant-prisma.service.js';
 import { tenantScope } from '../../database/tenant-scope.js';
 import { AuditService } from '../../infrastructure/audit/audit.service.js';
 // import { DomainEvents } from '../../infrastructure/events/domain-events.service.js`';
-
 
 import { RedisService } from '../../infrastructure/redis/redis.service.js';
 import type { UpdateRestaurantSettingsDto } from './dto/settings.dto.js';
@@ -33,10 +36,13 @@ export class RestaurantSettingsService {
    */
   async get(tx?: TenantTx): Promise<RestaurantSettings> {
     const restaurantId = this.db.restaurantId;
-    const cached = await this.redis.getJson<RestaurantSettings>(key(restaurantId));
+    const cached = await this.redis.getJson<RestaurantSettings>(
+      key(restaurantId),
+    );
     if (cached) return cached;
 
-    const load = (t: TenantTx) => t.restaurant.findUnique({ where: { id: restaurantId } });
+    const load = (t: TenantTx) =>
+      t.restaurant.findUnique({ where: { id: restaurantId } });
     const row = tx ? await load(tx) : await this.db.runFor(restaurantId, load);
     if (!row) throw new NotFoundException('Restaurant not provisioned');
 
@@ -59,19 +65,45 @@ export class RestaurantSettingsService {
   }
 
   async update(dto: UpdateRestaurantSettingsDto) {
-    if (dto.timezone && !isValidTimezone(dto.timezone)) throw new DomainException('Unknown timezone', 'INVALID_TIMEZONE');
+    if (dto.timezone && !isValidTimezone(dto.timezone))
+      throw new DomainException('Unknown timezone', 'INVALID_TIMEZONE');
     const restaurantId = await this.db.run(async (tx) => {
       const id = tenantScope.require();
       const before = await tx.restaurant.findUniqueOrThrow({ where: { id } });
-      const settingsJson = { ...((before.settings ?? {}) as object), ...(dto.dayRolloverHour !== undefined ? { dayRolloverHour: dto.dayRolloverHour } : {}) };
+      const settingsJson = {
+        ...((before.settings ?? {}) as object),
+        ...(dto.dayRolloverHour !== undefined
+          ? { dayRolloverHour: dto.dayRolloverHour }
+          : {}),
+      };
       const after = await tx.restaurant.update({
         where: { id },
-        data: { currency: dto.currency, taxRateBps: dto.taxRateBps, pricesIncludeTax: dto.pricesIncludeTax, timezone: dto.timezone, settings: settingsJson },
+        data: {
+          currency: dto.currency,
+          taxRateBps: dto.taxRateBps,
+          pricesIncludeTax: dto.pricesIncludeTax,
+          timezone: dto.timezone,
+          settings: settingsJson,
+        },
       });
       await this.audit.record(tx, {
-        action: 'settings.update', subjectType: 'restaurant', subjectId: id,
-        before: { currency: before.currency, taxRateBps: before.taxRateBps, pricesIncludeTax: before.pricesIncludeTax, timezone: before.timezone, settings: before.settings as object },
-        after: { currency: after.currency, taxRateBps: after.taxRateBps, pricesIncludeTax: after.pricesIncludeTax, timezone: after.timezone, settings: after.settings as object },
+        action: 'settings.update',
+        subjectType: 'restaurant',
+        subjectId: id,
+        before: {
+          currency: before.currency,
+          taxRateBps: before.taxRateBps,
+          pricesIncludeTax: before.pricesIncludeTax,
+          timezone: before.timezone,
+          settings: before.settings as object,
+        },
+        after: {
+          currency: after.currency,
+          taxRateBps: after.taxRateBps,
+          pricesIncludeTax: after.pricesIncludeTax,
+          timezone: after.timezone,
+          settings: after.settings as object,
+        },
       });
       return id;
     });

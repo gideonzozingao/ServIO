@@ -7,14 +7,30 @@ import type { CreateStationDto, UpdateStationDto } from './dto/settings.dto.js';
 
 @Injectable()
 export class StationsService {
-  constructor(private readonly db: TenantPrismaService, private readonly events: DomainEvents) {}
+  constructor(
+    private readonly db: TenantPrismaService,
+    private readonly events: DomainEvents,
+  ) {}
 
   list(includeInactive = false) {
-    return this.db.run((tx) => tx.station.findMany({ where: includeInactive ? {} : { active: true }, orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] }));
+    return this.db.run((tx) =>
+      tx.station.findMany({
+        where: includeInactive ? {} : { active: true },
+        orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+      }),
+    );
   }
 
   create(dto: CreateStationDto) {
-    return this.db.run((tx) => tx.station.create({ data: { restaurantId: rid(), name: dto.name, sortOrder: dto.sortOrder ?? 0 } }));
+    return this.db.run((tx) =>
+      tx.station.create({
+        data: {
+          restaurantId: rid(),
+          name: dto.name,
+          sortOrder: dto.sortOrder ?? 0,
+        },
+      }),
+    );
   }
 
   async update(id: string, dto: UpdateStationDto) {
@@ -31,9 +47,14 @@ export class StationsService {
   async remove(id: string) {
     return this.db.run(async (tx) => {
       const items = await tx.menuItem.count({ where: { stationId: id } });
-      const tickets = await tx.kitchenTicket.count({ where: { stationId: id } });
+      const tickets = await tx.kitchenTicket.count({
+        where: { stationId: id },
+      });
       if (items || tickets) {
-        const n = await tx.station.updateMany({ where: { id }, data: { active: false } });
+        const n = await tx.station.updateMany({
+          where: { id },
+          data: { active: false },
+        });
         if (!n.count) throw new EntityNotFoundException('Station', id);
         return { deleted: false, deactivated: true };
       }

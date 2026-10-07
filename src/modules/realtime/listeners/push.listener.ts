@@ -9,13 +9,27 @@ import { JOBS, QUEUES, type PushTicketReadyJob } from '../../../jobs/queues.js';
 @Injectable()
 export class PushListener {
   private readonly logger = new Logger(PushListener.name);
-  constructor(@InjectQueue(QUEUES.notifications) private readonly queue: Queue) {}
+  constructor(
+    @InjectQueue(QUEUES.notifications) private readonly queue: Queue,
+  ) {}
 
   @OnEvent('ticket.ready', { async: true })
   async ready(e: DomainEventMap['ticket.ready']) {
-    const data: PushTicketReadyJob = { restaurantId: e.restaurantId, waiterId: e.waiterId, orderId: e.orderId, orderNumber: e.orderNumber, tableLabel: e.tableLabel };
+    const data: PushTicketReadyJob = {
+      restaurantId: e.restaurantId,
+      waiterId: e.waiterId,
+      orderId: e.orderId,
+      orderNumber: e.orderNumber,
+      tableLabel: e.tableLabel,
+    };
     try {
-      await this.queue.add(JOBS.pushTicketReady, data, { jobId: `ready-${e.ticketId}`, removeOnComplete: 1000, removeOnFail: 1000, attempts: 3, backoff: { type: 'exponential', delay: 2000 } });
+      await this.queue.add(JOBS.pushTicketReady, data, {
+        jobId: `ready-${e.ticketId}`,
+        removeOnComplete: 1000,
+        removeOnFail: 1000,
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 2000 },
+      });
     } catch (err) {
       this.logger.warn(`could not enqueue push: ${(err as Error).message}`);
     }

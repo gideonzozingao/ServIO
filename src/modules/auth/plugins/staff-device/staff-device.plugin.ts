@@ -23,8 +23,17 @@ export const staffDevice = (opts: StaffDeviceOptions) =>
       staffManagerApproval: managerApprovalEndpoint(opts),
     },
     rateLimit: [
-      { pathMatcher: (path: string) => path === '/staff/pin-login' || path === '/staff/manager-approval', window: 60, max: 5 },
-      { pathMatcher: (path: string) => path === '/staff/roster', window: 60, max: 30 },
+      {
+        pathMatcher: (path: string) =>
+          path === '/staff/pin-login' || path === '/staff/manager-approval',
+        window: 60,
+        max: 5,
+      },
+      {
+        pathMatcher: (path: string) => path === '/staff/roster',
+        window: 60,
+        max: 30,
+      },
     ],
   }) satisfies BetterAuthPlugin;
 

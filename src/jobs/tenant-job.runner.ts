@@ -13,7 +13,9 @@ export class TenantJobRunner {
   constructor(private readonly prisma: PrismaService) {}
 
   async restaurantIds(): Promise<string[]> {
-    const rows = await this.prisma.app.$queryRaw<{ id: string }[]>`SELECT id::text AS id FROM organization ORDER BY created_at`;
+    const rows = await this.prisma.app.$queryRaw<
+      { id: string }[]
+    >`SELECT id::text AS id FROM organization ORDER BY created_at`;
     return rows.map((r) => r.id);
   }
 
@@ -22,7 +24,10 @@ export class TenantJobRunner {
   }
 
   /** One failing tenant never blocks the others. */
-  async forEach(fn: (restaurantId: string) => Promise<void>, only?: string): Promise<{ ok: number; failed: number }> {
+  async forEach(
+    fn: (restaurantId: string) => Promise<void>,
+    only?: string,
+  ): Promise<{ ok: number; failed: number }> {
     const ids = only ? [only] : await this.restaurantIds();
     let ok = 0;
     let failed = 0;

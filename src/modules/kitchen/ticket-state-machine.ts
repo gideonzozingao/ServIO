@@ -25,6 +25,9 @@ export const ITEM_STATUS_FOR_TICKET: Record<TicketStatus, ItemStatus | null> = {
 @Injectable()
 export class TicketStateMachine {
   assertCan(from: TicketStatus, to: TicketStatus) {
-    if (!TRANSITIONS[from].includes(to)) throw new InvalidStateException(`Invalid ticket transition ${from} -> ${to}`);
+    if (!TRANSITIONS[from].includes(to))
+      throw new InvalidStateException(
+        `Invalid ticket transition ${from} -> ${to}`,
+      );
   }
 }

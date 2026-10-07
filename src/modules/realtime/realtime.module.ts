@@ -13,6 +13,15 @@ import { RoomService } from './room.service.js';
 /** Imports no domain modules: it only reacts to domain events. */
 @Module({
   imports: [BullModule.registerQueue({ name: QUEUES.notifications })],
-  providers: [RealtimeGateway, RoomService, TicketListener, TableListener, MenuListener, OrderListener, SessionRevokedListener, PushListener],
+  providers: [
+    RealtimeGateway,
+    RoomService,
+    TicketListener,
+    TableListener,
+    MenuListener,
+    OrderListener,
+    SessionRevokedListener,
+    PushListener,
+  ],
 })
 export class RealtimeModule {}

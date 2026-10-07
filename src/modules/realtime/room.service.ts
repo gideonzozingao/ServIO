@@ -13,11 +13,17 @@ export const rooms = {
 };
 
 /** Rooms a member joins automatically on connect. Station rooms are joined on request. */
-export function autoRooms(restaurantId: string, userId: string, role: StaffRole, deviceId: string | null): string[] {
+export function autoRooms(
+  restaurantId: string,
+  userId: string,
+  role: StaffRole,
+  deviceId: string | null,
+): string[] {
   const list = [rooms.all(restaurantId), rooms.user(restaurantId, userId)];
   if (deviceId) list.push(rooms.device(restaurantId, deviceId));
   if (role !== 'kitchen') list.push(rooms.waiters(restaurantId));
-  if (role === 'owner' || role === 'manager') list.push(rooms.admin(restaurantId), rooms.kitchen(restaurantId));
+  if (role === 'owner' || role === 'manager')
+    list.push(rooms.admin(restaurantId), rooms.kitchen(restaurantId));
   // Kitchen devices receive only the stations they explicitly join (station.join).
   return list;
 }

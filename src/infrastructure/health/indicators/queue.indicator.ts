@@ -16,9 +16,15 @@ export class QueueHealthIndicator {
   async check(key = 'queue') {
     const i = this.health.check(key);
     try {
-      const counts = await this.queue.getJobCounts('waiting', 'delayed', 'failed');
+      const counts = await this.queue.getJobCounts(
+        'waiting',
+        'delayed',
+        'failed',
+      );
       const backlog = (counts.waiting ?? 0) + (counts.delayed ?? 0);
-      return backlog < BACKLOG_LIMIT ? i.up(counts) : i.down({ ...counts, message: 'backlog' });
+      return backlog < BACKLOG_LIMIT
+        ? i.up(counts)
+        : i.down({ ...counts, message: 'backlog' });
     } catch (e) {
       return i.down({ message: (e as Error).message });
     }

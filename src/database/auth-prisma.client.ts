@@ -11,7 +11,11 @@ import { PrismaClient } from './prisma-client.js';
 @Injectable()
 export class AuthPrismaClient extends PrismaClient implements OnModuleDestroy {
   constructor(config: ConfigService) {
-    super({ adapter: new PrismaPg({ connectionString: config.getOrThrow<AppConfig>('app').authDatabaseUrl }) });
+    super({
+      adapter: new PrismaPg({
+        connectionString: config.getOrThrow<AppConfig>('app').authDatabaseUrl,
+      }),
+    });
   }
 
   async onModuleDestroy() {

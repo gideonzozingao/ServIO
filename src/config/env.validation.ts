@@ -6,7 +6,9 @@ import { z } from 'zod';
  * z.stringbool() (Zod 4) accepts true/false, 1/0, yes/no, on/off, y/n, enabled/disabled (case-insensitive).
  */
 const EnvSchema = z.object({
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  NODE_ENV: z
+    .enum(['development', 'test', 'production'])
+    .default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
   SERVE_HTTP_PORT: z.coerce.number().int().positive().default(3000),
   DATABASE_URL: z.string().url(),
@@ -27,7 +29,9 @@ export type Env = z.infer<typeof EnvSchema>;
 export function validateEnv(raw: Record<string, unknown>): Env {
   const parsed = EnvSchema.safeParse(raw);
   if (!parsed.success) {
-    const issues = parsed.error.issues.map((i) => `  ${i.path.join('.')}: ${i.message}`).join('\n');
+    const issues = parsed.error.issues
+      .map((i) => `  ${i.path.join('.')}: ${i.message}`)
+      .join('\n');
     throw new Error(`Invalid environment:\n${issues}`);
   }
   return parsed.data;

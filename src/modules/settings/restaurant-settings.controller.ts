@@ -11,7 +11,10 @@ export class RestaurantSettingsController {
 
   @Get()
   async get() {
-    return { ...(await this.settings.get()), businessDate: (await this.settings.businessDate()).iso };
+    return {
+      ...(await this.settings.get()),
+      businessDate: (await this.settings.businessDate()).iso,
+    };
   }
 
   @Patch()

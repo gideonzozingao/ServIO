@@ -3,14 +3,38 @@ import { tenantScope } from '../tenant-scope.js';
 
 /** Prisma model names that carry restaurant_id and must always be scoped. */
 export const TENANT_MODELS = new Set<string>([
-  'Station', 'DiningTable', 'Category', 'MenuItem', 'ModifierGroup', 'Modifier',
-  'Order', 'OrderItem', 'OrderItemModifier', 'KitchenTicket', 'Bill', 'Payment',
-  'IdempotencyKey', 'AuditLog', 'DocumentCounter', 'DailySalesSummary',
+  'Station',
+  'DiningTable',
+  'Category',
+  'MenuItem',
+  'ModifierGroup',
+  'Modifier',
+  'Order',
+  'OrderItem',
+  'OrderItemModifier',
+  'KitchenTicket',
+  'Bill',
+  'Payment',
+  'IdempotencyKey',
+  'AuditLog',
+  'DocumentCounter',
+  'DailySalesSummary',
 ]);
 
 const WHERE_OPS = new Set([
-  'findUnique', 'findUniqueOrThrow', 'findFirst', 'findFirstOrThrow', 'findMany',
-  'count', 'aggregate', 'groupBy', 'update', 'updateMany', 'updateManyAndReturn', 'delete', 'deleteMany',
+  'findUnique',
+  'findUniqueOrThrow',
+  'findFirst',
+  'findFirstOrThrow',
+  'findMany',
+  'count',
+  'aggregate',
+  'groupBy',
+  'update',
+  'updateMany',
+  'updateManyAndReturn',
+  'delete',
+  'deleteMany',
 ]);
 
 /**
@@ -37,7 +61,10 @@ export const tenantExtension = Prisma.defineExtension({
           a.where = { ...(a.where ?? {}), restaurantId };
         } else if (operation === 'create') {
           a.data = { ...(a.data ?? {}), restaurantId };
-        } else if (operation === 'createMany' || operation === 'createManyAndReturn') {
+        } else if (
+          operation === 'createMany' ||
+          operation === 'createManyAndReturn'
+        ) {
           const rows = Array.isArray(a.data) ? a.data : [a.data];
           a.data = rows.map((d: object) => ({ ...d, restaurantId }));
         } else if (operation === 'upsert') {

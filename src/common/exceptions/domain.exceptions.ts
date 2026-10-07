@@ -24,6 +24,10 @@ export class DomainConflictException extends DomainException {
 
 export class EntityNotFoundException extends DomainException {
   constructor(entity: string, id?: string) {
-    super(id ? `${entity} ${id} not found` : `${entity} not found`, 'NOT_FOUND', 404);
+    super(
+      id ? `${entity} ${id} not found` : `${entity} not found`,
+      'NOT_FOUND',
+      404,
+    );
   }
 }

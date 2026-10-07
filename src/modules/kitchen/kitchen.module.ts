@@ -4,7 +4,6 @@ import { KitchenTicketsController } from './kitchen-tickets.controller.js';
 import { TicketQueryService } from './ticket-query.service.js';
 import { TicketStateMachine } from './ticket-state-machine.js';
 
-
 @Module({
   controllers: [KitchenTicketsController],
   providers: [TicketService, TicketQueryService, TicketStateMachine],

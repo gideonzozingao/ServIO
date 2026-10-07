@@ -8,8 +8,15 @@ import { QueueHealthIndicator } from './indicators/queue.indicator.js';
 import { RedisHealthIndicator } from './indicators/redis.indicator.js';
 
 @Module({
-  imports: [TerminusModule, BullModule.registerQueue({ name: QUEUES.notifications })],
+  imports: [
+    TerminusModule,
+    BullModule.registerQueue({ name: QUEUES.notifications }),
+  ],
   controllers: [HealthController],
-  providers: [PrismaHealthIndicator, RedisHealthIndicator, QueueHealthIndicator],
+  providers: [
+    PrismaHealthIndicator,
+    RedisHealthIndicator,
+    QueueHealthIndicator,
+  ],
 })
 export class HealthModule {}

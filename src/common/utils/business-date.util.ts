@@ -4,12 +4,21 @@
  */
 export interface BusinessDate {
   iso: string; // YYYY-MM-DD
-  date: Date;  // UTC midnight, for @db.Date columns
+  date: Date; // UTC midnight, for @db.Date columns
 }
 
-export function businessDateFor(now: Date, timezone: string, rolloverHour = 4): BusinessDate {
+export function businessDateFor(
+  now: Date,
+  timezone: string,
+  rolloverHour = 4,
+): BusinessDate {
   const shifted = new Date(now.getTime() - rolloverHour * 3_600_000);
-  const iso = new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(shifted);
+  const iso = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(shifted);
   return { iso, date: isoToDbDate(iso) };
 }
 

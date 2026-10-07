@@ -8,7 +8,17 @@ import { TenantPrismaService } from './tenant-prisma.service.js';
 @Global()
 @Module({
   imports: [TenancyModule],
-  providers: [PrismaService, AuthPrismaClient, TenantPrismaService, DocumentNumberService],
-  exports: [PrismaService, AuthPrismaClient, TenantPrismaService, DocumentNumberService],
+  providers: [
+    PrismaService,
+    AuthPrismaClient,
+    TenantPrismaService,
+    DocumentNumberService,
+  ],
+  exports: [
+    PrismaService,
+    AuthPrismaClient,
+    TenantPrismaService,
+    DocumentNumberService,
+  ],
 })
 export class DatabaseModule {}

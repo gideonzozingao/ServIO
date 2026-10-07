@@ -23,7 +23,13 @@ export class AuditController {
           subjectType: q.subjectType,
           subjectId: q.subjectId,
           userId: q.userId,
-          createdAt: q.from || q.to ? { gte: q.from ? new Date(q.from) : undefined, lt: q.to ? new Date(q.to) : undefined } : undefined,
+          createdAt:
+            q.from || q.to
+              ? {
+                  gte: q.from ? new Date(q.from) : undefined,
+                  lt: q.to ? new Date(q.to) : undefined,
+                }
+              : undefined,
         },
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         ...cursorArgs(q),

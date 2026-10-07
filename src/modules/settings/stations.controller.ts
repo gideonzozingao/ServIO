@@ -1,5 +1,16 @@
 import { RequirePermission } from './../../common/decorators/require-permission/require-permission.decorator.js';
-import { Body, Controller, Delete, Get, Param, ParseBoolPipe, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseBoolPipe,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { CreateStationDto, UpdateStationDto } from './dto/settings.dto.js';
@@ -12,7 +23,10 @@ export class StationsController {
   constructor(private readonly stations: StationsService) {}
 
   @Get()
-  list(@Query('includeInactive', new ParseBoolPipe({ optional: true })) includeInactive?: boolean) {
+  list(
+    @Query('includeInactive', new ParseBoolPipe({ optional: true }))
+    includeInactive?: boolean,
+  ) {
     return this.stations.list(includeInactive);
   }
 
@@ -24,7 +38,10 @@ export class StationsController {
 
   @Patch(':id')
   @RequirePermission('settings', 'manage')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateStationDto) {
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateStationDto,
+  ) {
     return this.stations.update(id, dto);
   }
 

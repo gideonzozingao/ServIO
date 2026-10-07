@@ -13,7 +13,11 @@ export class KitchenActionsController {
 
   @Patch(':id')
   @RequirePermission('ticket', 'update')
-  update(@CurrentSession() s: RequestSession, @Param('id', ParseUUIDPipe) id: string, @Body() dto: AdvanceTicketDto) {
+  update(
+    @CurrentSession() s: RequestSession,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AdvanceTicketDto,
+  ) {
     return this.advance.execute(s, id, dto.status);
   }
 }

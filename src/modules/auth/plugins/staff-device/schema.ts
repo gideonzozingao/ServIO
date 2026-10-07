@@ -6,7 +6,11 @@
 export const staffDeviceSchema = {
   device: {
     fields: {
-      organizationId: { type: 'string', required: true, references: { model: 'organization', field: 'id', onDelete: 'cascade' } },
+      organizationId: {
+        type: 'string',
+        required: true,
+        references: { model: 'organization', field: 'id', onDelete: 'cascade' },
+      },
       name: { type: 'string', required: true },
       tokenHash: { type: 'string', required: true, unique: true },
       approvedBy: { type: 'string', required: false },
@@ -18,8 +22,16 @@ export const staffDeviceSchema = {
   },
   staffPin: {
     fields: {
-      userId: { type: 'string', required: true, references: { model: 'user', field: 'id', onDelete: 'cascade' } },
-      organizationId: { type: 'string', required: true, references: { model: 'organization', field: 'id', onDelete: 'cascade' } },
+      userId: {
+        type: 'string',
+        required: true,
+        references: { model: 'user', field: 'id', onDelete: 'cascade' },
+      },
+      organizationId: {
+        type: 'string',
+        required: true,
+        references: { model: 'organization', field: 'id', onDelete: 'cascade' },
+      },
       pinHash: { type: 'string', required: true },
       failedAttempts: { type: 'number', required: true, defaultValue: 0 },
       lockedUntil: { type: 'date', required: false },
@@ -28,7 +40,11 @@ export const staffDeviceSchema = {
   },
   managerApproval: {
     fields: {
-      organizationId: { type: 'string', required: true, references: { model: 'organization', field: 'id', onDelete: 'cascade' } },
+      organizationId: {
+        type: 'string',
+        required: true,
+        references: { model: 'organization', field: 'id', onDelete: 'cascade' },
+      },
       approverId: { type: 'string', required: true },
       action: { type: 'string', required: true },
       subjectId: { type: 'string', required: true },

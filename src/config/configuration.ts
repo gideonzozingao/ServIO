@@ -6,7 +6,12 @@ export interface AppConfig {
   databaseUrl: string;
   authDatabaseUrl: string;
   redisUrl: string;
-  auth: { secret: string; baseUrl: string; pinPepper: string; staffSessionHours: number };
+  auth: {
+    secret: string;
+    baseUrl: string;
+    pinPepper: string;
+    staffSessionHours: number;
+  };
   corsOrigins: string[];
   appUrl: string;
   selfSignupEnabled: boolean;
@@ -31,8 +36,12 @@ export const configuration = (): { app: AppConfig } => {
       },
       appUrl: env.APP_URL.replace(/\/$/, ''),
       selfSignupEnabled: env.SELF_SIGNUP_ENABLED,
-      trustedProxies: env.TRUSTED_PROXIES.split(',').map((s) => s.trim()).filter(Boolean),
-      corsOrigins: env.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean),
+      trustedProxies: env.TRUSTED_PROXIES.split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+      corsOrigins: env.CORS_ORIGINS.split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
     },
   };
 };

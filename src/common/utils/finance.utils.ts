@@ -41,7 +41,10 @@ export type MoneyErrorCode =
   | 'INVALID_PAYMENT';
 
 export class MoneyError extends Error {
-  constructor(message: string, readonly code: MoneyErrorCode) {
+  constructor(
+    message: string,
+    readonly code: MoneyErrorCode,
+  ) {
     super(message);
     this.name = 'MoneyError';
   }
@@ -56,8 +59,7 @@ export interface PricedLine {
 }
 
 export type Discount =
-  | { type: 'FIXED'; amountMinor: Minor }
-  | { type: 'PERCENT'; bps: number };
+  { type: 'FIXED'; amountMinor: Minor } | { type: 'PERCENT'; bps: number };
 
 export interface OrderTotalsInput {
   lines: readonly PricedLine[];
@@ -79,24 +81,48 @@ export interface OrderTotals {
 
 // ── Guards ───────────────────────────────────────────────────────────────────
 
-export function assertMinor(value: unknown, label = 'amount'): asserts value is Minor {
+export function assertMinor(
+  value: unknown,
+  label = 'amount',
+): asserts value is Minor {
   if (typeof value !== 'number' || !Number.isSafeInteger(value)) {
-    throw new MoneyError(`${label} must be a safe integer in minor units`, 'NOT_INTEGER');
+    throw new MoneyError(
+      `${label} must be a safe integer in minor units`,
+      'NOT_INTEGER',
+    );
   }
 }
 
-export function assertNonNegativeMinor(value: unknown, label = 'amount'): asserts value is Minor {
+export function assertNonNegativeMinor(
+  value: unknown,
+  label = 'amount',
+): asserts value is Minor {
   assertMinor(value, label);
-  if (value < 0) throw new MoneyError(`${label} must not be negative`, 'NEGATIVE');
+  if (value < 0)
+    throw new MoneyError(`${label} must not be negative`, 'NEGATIVE');
 }
 
-export function assertBps(value: unknown, label = 'rate'): asserts value is number {
-  if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > BPS_DENOMINATOR) {
-    throw new MoneyError(`${label} must be an integer between 0 and ${BPS_DENOMINATOR} bps`, 'INVALID_RATE');
+export function assertBps(
+  value: unknown,
+  label = 'rate',
+): asserts value is number {
+  if (
+    typeof value !== 'number' ||
+    !Number.isInteger(value) ||
+    value < 0 ||
+    value > BPS_DENOMINATOR
+  ) {
+    throw new MoneyError(
+      `${label} must be an integer between 0 and ${BPS_DENOMINATOR} bps`,
+      'INVALID_RATE',
+    );
   }
 }
 
-export function assertQty(value: unknown, label = 'qty'): asserts value is number {
+export function assertQty(
+  value: unknown,
+  label = 'qty',
+): asserts value is number {
   if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 1) {
     throw new MoneyError(`${label} must be an integer >= 1`, 'INVALID_QTY');
   }
@@ -105,7 +131,11 @@ export function assertQty(value: unknown, label = 'qty'): asserts value is numbe
 // ── Safe integer arithmetic ──────────────────────────────────────────────────
 
 function checked(n: number, label = 'result'): number {
-  if (!Number.isSafeInteger(n)) throw new MoneyError(`${label} overflows safe integer range`, 'NOT_INTEGER');
+  if (!Number.isSafeInteger(n))
+    throw new MoneyError(
+      `${label} overflows safe integer range`,
+      'NOT_INTEGER',
+    );
   return n;
 }
 
@@ -124,7 +154,8 @@ export function sumMinor(values: readonly Minor[]): Minor {
 
 export function mulMinor(amount: Minor, factor: number): Minor {
   assertMinor(amount);
-  if (!Number.isSafeInteger(factor)) throw new MoneyError('factor must be a safe integer', 'NOT_INTEGER');
+  if (!Number.isSafeInteger(factor))
+    throw new MoneyError('factor must be a safe integer', 'NOT_INTEGER');
   return checked(amount * factor, 'product');
 }
 
@@ -134,9 +165,13 @@ export function mulMinor(amount: Minor, factor: number): Minor {
  * Exact for |numerator| < 2^53 (enforced).
  */
 export function roundDiv(numerator: number, denominator: number): number {
-  if (!Number.isSafeInteger(numerator)) throw new MoneyError('numerator must be a safe integer', 'NOT_INTEGER');
+  if (!Number.isSafeInteger(numerator))
+    throw new MoneyError('numerator must be a safe integer', 'NOT_INTEGER');
   if (!Number.isSafeInteger(denominator) || denominator <= 0) {
-    throw new MoneyError('denominator must be a positive safe integer', 'INVALID_INPUT');
+    throw new MoneyError(
+      'denominator must be a positive safe integer',
+      'INVALID_INPUT',
+    );
   }
   const sign = numerator < 0 ? -1 : 1;
   const abs = Math.abs(numerator);
@@ -164,7 +199,11 @@ export function shareBps(part: Minor, whole: Minor): number {
 /** total / count rounded half up; 0 when count is 0 (average order value etc.). */
 export function averageMinor(total: Minor, count: number): Minor {
   assertMinor(total, 'total');
-  if (!Number.isSafeInteger(count) || count < 0) throw new MoneyError('count must be a non-negative integer', 'INVALID_INPUT');
+  if (!Number.isSafeInteger(count) || count < 0)
+    throw new MoneyError(
+      'count must be a non-negative integer',
+      'INVALID_INPUT',
+    );
   return count === 0 ? 0 : roundDiv(total, count);
 }
 
@@ -177,10 +216,14 @@ export function averageMinor(total: Minor, count: number): Minor {
 export function toMinor(input: string | number): Minor {
   let text: string;
   if (typeof input === 'number') {
-    if (!Number.isFinite(input)) throw new MoneyError('amount must be a finite number', 'INVALID_INPUT');
+    if (!Number.isFinite(input))
+      throw new MoneyError('amount must be a finite number', 'INVALID_INPUT');
     const scaled = input * MINOR_PER_MAJOR;
     if (Math.abs(scaled - Math.round(scaled)) > 1e-7) {
-      throw new MoneyError('amount has more than 2 decimal places', 'INVALID_INPUT');
+      throw new MoneyError(
+        'amount has more than 2 decimal places',
+        'INVALID_INPUT',
+      );
     }
     text = input.toFixed(2);
   } else {
@@ -188,10 +231,14 @@ export function toMinor(input: string | number): Minor {
   }
 
   const match = /^(-)?(\d+)(?:\.(\d{1,2}))?$/.exec(text);
-  if (!match) throw new MoneyError(`invalid money value "${input}"`, 'INVALID_INPUT');
+  if (!match)
+    throw new MoneyError(`invalid money value "${input}"`, 'INVALID_INPUT');
 
   const [, neg, whole, frac = ''] = match;
-  const minor = checked(Number(whole) * MINOR_PER_MAJOR + Number(frac.padEnd(2, '0')), 'amount');
+  const minor = checked(
+    Number(whole) * MINOR_PER_MAJOR + Number(frac.padEnd(2, '0')),
+    'amount',
+  );
   return neg && minor !== 0 ? -minor : minor;
 }
 
@@ -205,24 +252,42 @@ export function fromMinor(minor: Minor): string {
 }
 
 /** Display formatting (UI/receipts only; never parse this back). */
-export function formatMinor(minor: Minor, currency = 'PGK', locale = 'en-PG'): string {
+export function formatMinor(
+  minor: Minor,
+  currency = 'PGK',
+  locale = 'en-PG',
+): string {
   assertMinor(minor);
   const value = minor / MINOR_PER_MAJOR;
   try {
-    return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(value);
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency,
+    }).format(value);
   } catch {
-    return new Intl.NumberFormat('en', { style: 'currency', currency }).format(value);
+    return new Intl.NumberFormat('en', { style: 'currency', currency }).format(
+      value,
+    );
   }
 }
 
 // ── Line items ───────────────────────────────────────────────────────────────
 
 /** (unit price + modifier deltas) * qty. */
-export function lineTotalMinor(line: Pick<PricedLine, 'unitPriceMinor' | 'qty' | 'modifierDeltasMinor'>): Minor {
+export function lineTotalMinor(
+  line: Pick<PricedLine, 'unitPriceMinor' | 'qty' | 'modifierDeltasMinor'>,
+): Minor {
   assertNonNegativeMinor(line.unitPriceMinor, 'unitPriceMinor');
   assertQty(line.qty);
-  const unit = sumMinor([line.unitPriceMinor, ...(line.modifierDeltasMinor ?? [])]);
-  if (unit < 0) throw new MoneyError('modifiers cannot make the unit price negative', 'NEGATIVE');
+  const unit = sumMinor([
+    line.unitPriceMinor,
+    ...(line.modifierDeltasMinor ?? []),
+  ]);
+  if (unit < 0)
+    throw new MoneyError(
+      'modifiers cannot make the unit price negative',
+      'NEGATIVE',
+    );
   return mulMinor(unit, line.qty);
 }
 
@@ -245,14 +310,20 @@ export function taxExclusive(netMinor: Minor, rateBps: number): TaxBreakdown {
 export function taxInclusive(grossMinor: Minor, rateBps: number): TaxBreakdown {
   assertNonNegativeMinor(grossMinor, 'gross');
   assertBps(rateBps);
-  const netMinor = roundDiv(mulMinor(grossMinor, BPS_DENOMINATOR), BPS_DENOMINATOR + rateBps);
+  const netMinor = roundDiv(
+    mulMinor(grossMinor, BPS_DENOMINATOR),
+    BPS_DENOMINATOR + rateBps,
+  );
   return { netMinor, taxMinor: grossMinor - netMinor, grossMinor };
 }
 
 // ── Discounts ────────────────────────────────────────────────────────────────
 
 /** Discount in minor units, always within [0, subtotal]. */
-export function computeDiscount(subtotalMinor: Minor, discount?: Discount): Minor {
+export function computeDiscount(
+  subtotalMinor: Minor,
+  discount?: Discount,
+): Minor {
   assertNonNegativeMinor(subtotalMinor, 'subtotal');
   if (!discount) return 0;
 
@@ -273,17 +344,37 @@ export function computeDiscount(subtotalMinor: Minor, discount?: Discount): Mino
 export function computeOrderTotals(input: OrderTotalsInput): OrderTotals {
   assertBps(input.taxRateBps, 'taxRateBps');
 
-  const subtotalMinor = sumMinor(input.lines.filter((l) => !l.voided).map(lineTotalMinor));
+  const subtotalMinor = sumMinor(
+    input.lines.filter((l) => !l.voided).map(lineTotalMinor),
+  );
   const discountMinor = computeDiscount(subtotalMinor, input.discount);
   const afterDiscount = subtotalMinor - discountMinor;
 
   if (input.pricesIncludeTax) {
-    const { netMinor, taxMinor } = taxInclusive(afterDiscount, input.taxRateBps);
-    return { subtotalMinor, discountMinor, taxMinor, totalMinor: afterDiscount, netMinor };
+    const { netMinor, taxMinor } = taxInclusive(
+      afterDiscount,
+      input.taxRateBps,
+    );
+    return {
+      subtotalMinor,
+      discountMinor,
+      taxMinor,
+      totalMinor: afterDiscount,
+      netMinor,
+    };
   }
 
-  const { taxMinor, grossMinor } = taxExclusive(afterDiscount, input.taxRateBps);
-  return { subtotalMinor, discountMinor, taxMinor, totalMinor: grossMinor, netMinor: afterDiscount };
+  const { taxMinor, grossMinor } = taxExclusive(
+    afterDiscount,
+    input.taxRateBps,
+  );
+  return {
+    subtotalMinor,
+    discountMinor,
+    taxMinor,
+    totalMinor: grossMinor,
+    netMinor: afterDiscount,
+  };
 }
 
 // ── Allocation and splitting ─────────────────────────────────────────────────
@@ -296,12 +387,21 @@ export function computeOrderTotals(input: OrderTotalsInput): OrderTotals {
  */
 export function allocate(amount: Minor, weights: readonly number[]): Minor[] {
   assertMinor(amount, 'amount');
-  if (weights.length === 0) throw new MoneyError('weights must not be empty', 'INVALID_WEIGHTS');
+  if (weights.length === 0)
+    throw new MoneyError('weights must not be empty', 'INVALID_WEIGHTS');
   for (const w of weights) {
-    if (!Number.isSafeInteger(w) || w < 0) throw new MoneyError('weights must be non-negative integers', 'INVALID_WEIGHTS');
+    if (!Number.isSafeInteger(w) || w < 0)
+      throw new MoneyError(
+        'weights must be non-negative integers',
+        'INVALID_WEIGHTS',
+      );
   }
-  const totalWeight = checked(weights.reduce((a, b) => a + b, 0), 'total weight');
-  if (totalWeight <= 0) throw new MoneyError('total weight must be positive', 'INVALID_WEIGHTS');
+  const totalWeight = checked(
+    weights.reduce((a, b) => a + b, 0),
+    'total weight',
+  );
+  if (totalWeight <= 0)
+    throw new MoneyError('total weight must be positive', 'INVALID_WEIGHTS');
 
   const sign = amount < 0 ? -1 : 1;
   const abs = Math.abs(amount);
@@ -321,7 +421,8 @@ export function allocate(amount: Minor, weights: readonly number[]): Minor[] {
 
 /** Split into `parts` near-equal shares; the first (amount % parts) shares get +1. */
 export function splitEqually(amount: Minor, parts: number): Minor[] {
-  if (!Number.isSafeInteger(parts) || parts < 1) throw new MoneyError('parts must be an integer >= 1', 'INVALID_INPUT');
+  if (!Number.isSafeInteger(parts) || parts < 1)
+    throw new MoneyError('parts must be an integer >= 1', 'INVALID_INPUT');
   return allocate(amount, Array<number>(parts).fill(1));
 }
 
@@ -332,12 +433,18 @@ export function totalPaid(payments: readonly { amountMinor: Minor }[]): Minor {
 }
 
 /** Outstanding balance, never negative. */
-export function remainingMinor(totalMinor: Minor, payments: readonly { amountMinor: Minor }[]): Minor {
+export function remainingMinor(
+  totalMinor: Minor,
+  payments: readonly { amountMinor: Minor }[],
+): Minor {
   assertNonNegativeMinor(totalMinor, 'total');
   return Math.max(0, totalMinor - totalPaid(payments));
 }
 
-export function paymentStatus(totalMinor: Minor, payments: readonly { amountMinor: Minor }[]): PaymentStatus {
+export function paymentStatus(
+  totalMinor: Minor,
+  payments: readonly { amountMinor: Minor }[],
+): PaymentStatus {
   assertNonNegativeMinor(totalMinor, 'total');
   const paid = totalPaid(payments);
   if (paid === 0 && totalMinor > 0) return 'UNPAID';
@@ -369,18 +476,32 @@ export function validatePayment(input: PaymentInput): ValidatedPayment {
   assertMinor(amountMinor, 'amountMinor');
   assertNonNegativeMinor(remaining, 'remainingMinor');
 
-  if (amountMinor <= 0) throw new MoneyError('payment amount must be greater than zero', 'INVALID_PAYMENT');
+  if (amountMinor <= 0)
+    throw new MoneyError(
+      'payment amount must be greater than zero',
+      'INVALID_PAYMENT',
+    );
   if (amountMinor > remaining) {
-    throw new MoneyError('payment exceeds the remaining balance', 'OVERPAYMENT');
+    throw new MoneyError(
+      'payment exceeds the remaining balance',
+      'OVERPAYMENT',
+    );
   }
 
   const tendered = input.tenderedMinor ?? amountMinor;
   assertNonNegativeMinor(tendered, 'tenderedMinor');
 
   if (method === 'CASH') {
-    if (tendered < amountMinor) throw new MoneyError('cash tendered is less than the amount', 'INSUFFICIENT_TENDER');
+    if (tendered < amountMinor)
+      throw new MoneyError(
+        'cash tendered is less than the amount',
+        'INSUFFICIENT_TENDER',
+      );
   } else if (tendered !== amountMinor) {
-    throw new MoneyError('tendered amount only applies to cash payments', 'INVALID_PAYMENT');
+    throw new MoneyError(
+      'tendered amount only applies to cash payments',
+      'INVALID_PAYMENT',
+    );
   }
 
   return {
@@ -396,7 +517,8 @@ export function validatePayment(input: PaymentInput): ValidatedPayment {
 /** Round to the nearest multiple of `step` minor units (half up). */
 export function roundToIncrement(amount: Minor, step: number): Minor {
   assertMinor(amount);
-  if (!Number.isSafeInteger(step) || step < 1) throw new MoneyError('step must be an integer >= 1', 'INVALID_INPUT');
+  if (!Number.isSafeInteger(step) || step < 1)
+    throw new MoneyError('step must be an integer >= 1', 'INVALID_INPUT');
   return mulMinor(roundDiv(amount, step), step);
 }
 
@@ -405,7 +527,10 @@ export function roundToIncrement(amount: Minor, step: number): Minor {
  * Apply to the cash amount due, record `adjustmentMinor` separately for reporting.
  * Confirm the step (and whether it is permitted for receipts) with the business.
  */
-export function cashRoundingAdjustment(amountMinor: Minor, step = 5): { roundedMinor: Minor; adjustmentMinor: Minor } {
+export function cashRoundingAdjustment(
+  amountMinor: Minor,
+  step = 5,
+): { roundedMinor: Minor; adjustmentMinor: Minor } {
   const roundedMinor = roundToIncrement(amountMinor, step);
   return { roundedMinor, adjustmentMinor: roundedMinor - amountMinor };
 }

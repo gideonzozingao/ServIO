@@ -1,5 +1,13 @@
 import { Public } from './../../common/decorators/public/public.decorator.js';
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Post,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 
@@ -36,7 +44,10 @@ export class RegistrationController {
   /** For people without an account. Existing accounts accept via POST /account/invitations/:id/accept. */
   @Post('invitations/:id/accept')
   @Throttle({ default: { limit: 10, ttl: 60 * 60_000 } })
-  accept(@Param('id', ParseUUIDPipe) id: string, @Body() dto: AcceptInvitationDto) {
+  accept(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AcceptInvitationDto,
+  ) {
     return this.registration.acceptInvitation(id, dto);
   }
 }

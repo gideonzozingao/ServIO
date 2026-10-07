@@ -11,7 +11,9 @@ export class ReportCacheListener {
 
   @OnEvent('payment.recorded', { async: true })
   @OnEvent('order.closed', { async: true })
-  async invalidate(e: DomainEventMap['payment.recorded'] | DomainEventMap['order.closed']) {
+  async invalidate(
+    e: DomainEventMap['payment.recorded'] | DomainEventMap['order.closed'],
+  ) {
     await this.redis.delByPrefix(reportCachePrefix(e.restaurantId));
   }
 }

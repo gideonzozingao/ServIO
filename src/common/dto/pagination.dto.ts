@@ -3,7 +3,9 @@ import { Type } from 'class-transformer';
 import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class PaginationDto {
-  @ApiPropertyOptional({ description: 'id of the last item from the previous page' })
+  @ApiPropertyOptional({
+    description: 'id of the last item from the previous page',
+  })
   @IsOptional()
   @IsString()
   cursor?: string;
@@ -19,5 +21,8 @@ export class PaginationDto {
 
 /** Prisma cursor args: fetch limit+1 to know whether there is a next page. Pair with a stable orderBy incl. id. */
 export function cursorArgs(p: PaginationDto) {
-  return { take: p.limit + 1, ...(p.cursor ? { cursor: { id: p.cursor }, skip: 1 } : {}) };
+  return {
+    take: p.limit + 1,
+    ...(p.cursor ? { cursor: { id: p.cursor }, skip: 1 } : {}),
+  };
 }

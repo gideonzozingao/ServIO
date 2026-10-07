@@ -26,6 +26,10 @@ export class HealthController {
   @Get('ready')
   @HealthCheck()
   ready() {
-    return this.health.check([() => this.db.check(), () => this.redis.check(), () => this.queue.check()]);
+    return this.health.check([
+      () => this.db.check(),
+      () => this.redis.check(),
+      () => this.queue.check(),
+    ]);
   }
 }
